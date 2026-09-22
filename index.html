@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e79">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SignVaani</title>
+<style>
+:root{
+  --mist:#edf1f4; --card:#ffffff; --ink:#10202b; --mut:#5b6b78; --line:#d5dde3;
+  --peacock:#0b6e79; --peacock-d:#084f57; --marigold:#f2a900; --coral:#d9483b; --ok:#1f8a4c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--mist);color:var(--ink);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari","Noto Sans Gujarati","Noto Sans Oriya","Nirmala UI",sans-serif}
+.app{max-width:760px;margin:0 auto;padding:12px 14px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 12px;flex-wrap:wrap}
+.brand{font-size:1.35rem;font-weight:800;letter-spacing:-.01em}
+.brand small{display:block;font-size:.78rem;font-weight:500;color:var(--mut);letter-spacing:0}
+.pill{font-size:.8rem;padding:4px 12px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--mut)}
+.pill.live{color:var(--ok);border-color:#a8d9bc;background:#eef9f2}
+.pill.err{color:var(--coral);border-color:#f0b9b3;background:#fdf1ef}
+
+.stage{position:relative;width:100%;aspect-ratio:4/3;background:#0d1a22;border-radius:22px;overflow:hidden;
+  box-shadow:0 0 0 3px #fff,0 0 0 4px var(--line)}
+.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.stage.mirror video,.stage.mirror canvas{transform:scaleX(-1)}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;color:#b8c7d1;text-align:center;padding:20px}
+.placeholder b{font-size:1.1rem;color:#fff}
+.hud{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(10,24,32,.78);color:#fff;border-radius:14px;
+  padding:8px 12px;backdrop-filter:blur(4px)}
+.hud-label{font-size:1.05rem;font-weight:700;min-height:1.5em}
+.hud-sub{font-size:.78rem;color:#b8c7d1}
+.bar{height:5px;border-radius:9px;background:rgba(255,255,255,.18);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--marigold);transition:width .08s linear}
+.countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:5.5rem;font-weight:800;color:#fff;text-shadow:0 3px 24px rgba(0,0,0,.6);background:rgba(0,0,0,.25)}
+.countdown.rec{color:#ff6b5e}
+.hidden{display:none!important}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.controls{margin:12px 0 4px}
+.btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:600;
+  padding:10px 16px;border-radius:99px;cursor:pointer;transition:transform .08s, background .15s;text-decoration:none;display:inline-block}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
+.btn.primary{background:var(--peacock);border-color:var(--peacock);color:#fff}
+.btn.primary:hover{background:var(--peacock-d)}
+.btn.warn{background:var(--marigold);border-color:var(--marigold);color:#241800}
+.btn.danger{color:var(--coral);border-color:#efc3be}
+.btn.small{padding:6px 12px;font-size:.88rem}
+.btn:disabled{opacity:.5}
+
+.tabs{display:flex;gap:3px;background:#dfe6eb;border-radius:14px;padding:4px;margin:14px 0 12px}
+.tab{flex:1;appearance:none;border:0;background:transparent;font:inherit;font-weight:600;color:var(--mut);
+  padding:9px 2px;border-radius:11px;cursor:pointer;font-size:.9rem}
+.tab[aria-selected="true"]{background:#fff;color:var(--peacock);box-shadow:0 1px 3px rgba(16,32,43,.12)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:1rem}
+.card p.hint,.hint{margin:4px 0 0;color:var(--mut);font-size:.86rem}
+.seg{display:inline-flex;background:#dfe6eb;border-radius:99px;padding:3px}
+.seg button{appearance:none;border:0;background:transparent;font:inherit;font-weight:600;color:var(--mut);padding:7px 14px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--peacock);color:#fff}
+
+.sentence{min-height:64px;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;padding:2px 0 10px}
+.sentence .empty{color:var(--mut);font-size:.95rem}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#e3f1f2;color:var(--peacock-d);border:1px solid #bcdcdf;
+  border-radius:10px;padding:5px 10px;font:inherit;font-weight:600;font-size:1.02rem;cursor:pointer}
+.chip.alt{background:#fff6dd;border-color:#f0dc9a;color:#6b4d00}
+.chip.miss{background:#f4f4f4;border:1px dashed #b7bfc6;color:#6b7680}
+.chip.cur{outline:3px solid var(--marigold)}
+.chip small{font-weight:500;opacity:.7}
+.big-text{font-size:1.6rem;line-height:1.35;font-weight:700;min-height:120px;padding:6px 2px;white-space:pre-wrap}
+.big-text .interim{color:var(--mut);font-weight:500}
+
+input[type=text],select,textarea{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+label.f{display:block;font-size:.86rem;color:var(--mut);margin:8px 0 3px}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:.88rem;color:var(--mut)}
+input[type=range]{width:100%;accent-color:var(--peacock)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfd}
+.item .t{font-weight:700}
+.item .m{font-size:.82rem;color:var(--mut)}
+.tag{font-size:.74rem;padding:2px 8px;border-radius:99px;background:#eef1f4;color:var(--mut);margin-left:6px;font-weight:600}
+.tag.motion{background:#fff0c9;color:#6b4d00}
+.tag.ok{background:#e4f5ea;color:var(--ok)}
+details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:#fbfcfd;margin-top:8px}
+summary{cursor:pointer;font-weight:700}
+.warnbox{background:#fff6dd;border:1px solid #f0dc9a;color:#5a4200;border-radius:12px;padding:8px 12px;font-size:.88rem;margin:8px 0}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;
+  font-size:.92rem;max-width:88vw;z-index:20;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.mic{width:76px;height:76px;border-radius:50%;font-size:1.9rem;border:0;background:var(--peacock);color:#fff;cursor:pointer}
+.mic.on{background:var(--coral);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(217,72,59,.45)}100%{box-shadow:0 0 0 18px rgba(217,72,59,0)}}
+@media (prefers-reduced-motion:reduce){.mic.on{animation:none}.btn,.bar i{transition:none}}
+
+.prog{height:8px;background:#e3e9ee;border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--peacock)}
+.vrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:7px 0;border-top:1px solid #eef1f4}
+.vrow:first-of-type{border-top:0}
+.vname b{font-size:1rem}
+.vname span{color:var(--mut);font-size:.88rem}
+.vbtns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.vbtns select{width:auto;padding:5px 8px;font-size:.82rem;border-radius:9px}
+a.lnk{font-size:.84rem;color:var(--peacock);font-weight:600}
+.demo{width:100%;height:auto;border-radius:16px;background:#0d1a22;display:block}
+.demo-title{font-size:1.5rem;font-weight:800;margin:10px 0 0}
+.prac-text{font-size:1.15rem;font-weight:700;margin-top:10px;min-height:1.6em}
+footer{color:var(--mut);font-size:.8rem;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span data-t="brand">SignVaani</span><small data-t="tagline">Indian Sign Language ⇄ Voice</small></div>
+    <div class="row" style="flex-wrap:nowrap;gap:6px">
+      <div class="seg" id="uiSeg" role="group" data-ta="a_ui_lang" aria-label="App language">
+        <button data-ui="hi" aria-pressed="true">हिन्दी</button><button data-ui="en" aria-pressed="false">English</button>
+      </div>
+      <div id="status" class="pill"></div>
+    </div>
+  </header>
+
+  <section class="stage" id="stage" data-ta="a_camera" aria-label="Camera">
+    <video id="video" playsinline muted></video>
+    <canvas id="overlay"></canvas>
+    <div id="placeholder" class="placeholder">
+      <b data-t="ph_title">Start the camera</b>
+      <span data-t="ph_text">Keep your hand in front of the camera in good light. Everything is processed on your device.</span>
+    </div>
+    <div class="hud" id="hud">
+      <div class="hud-label" id="hudLabel">—</div>
+      <div class="hud-sub" id="hudSub"></div>
+      <div class="bar"><i id="hudBar"></i></div>
+    </div>
+    <div id="countdown" class="countdown hidden"></div>
+  </section>
+
+  <div class="row controls">
+    <button id="btnStart" class="btn primary">Start camera</button>
+    <button id="btnFlip" class="btn" data-t="cam_flip">Flip camera</button>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="bolo" aria-selected="true" data-t="tab_speak">Speak</button>
+    <button class="tab" role="tab" data-tab="seekho" aria-selected="false" data-t="tab_learn">Learn</button>
+    <button class="tab" role="tab" data-tab="library" aria-selected="false" data-t="tab_library">Library</button>
+    <button class="tab" role="tab" data-tab="suno" aria-selected="false" data-t="tab_listen">Listen</button>
+    <button class="tab" role="tab" data-tab="settings" aria-selected="false" data-t="tab_settings">Settings</button>
+  </nav>
+
+  <!-- SPEAK : sign -> voice -->
+  <main id="pane-bolo" class="pane">
+    <div class="card">
+      <div class="seg" id="modeSeg" role="group">
+        <button data-mode="static" aria-pressed="true" data-t="mode_static">Static sign (hold)</button>
+        <button data-mode="motion" aria-pressed="false" data-t="mode_motion">Motion sign</button>
+      </div>
+      <div id="motionBox" class="hidden" style="margin-top:10px">
+        <button id="btnMotion" class="btn warn" data-t="btn_motion">Record sign (2 sec)</button>
+        <p class="hint" data-t="motion_hint">Press the button, then sign after the 3-2-1 countdown. The sign must already be recorded in the Library.</p>
+        <div id="candBox" class="row" style="margin-top:8px"></div>
+      </div>
+      <p id="staticHint" class="hint" data-t="static_hint">Hold the sign for about 1 second — the word is added to the sentence automatically.</p>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_sentence">Sentence</h3>
+      <div id="sentence" class="sentence"></div>
+      <div class="row">
+        <button id="btnSpeak" class="btn primary" data-t="btn_speak">Speak</button>
+        <button id="btnUndo" class="btn" data-t="btn_undo">Undo</button>
+        <button id="btnClear" class="btn" data-t="btn_clear">Clear</button>
+        <button id="btnCopy" class="btn" data-t="btn_copy">Copy</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_type">Type and speak</h3>
+      <div class="row" style="flex-wrap:nowrap">
+        <input id="typeIn" type="text" data-tp="ph_type" placeholder="Type something…" autocomplete="off">
+        <button id="btnTypeSpeak" class="btn primary" data-t="btn_speak">Speak</button>
+      </div>
+      <div id="quick" class="row" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:8px"><button id="btnSavePhrase" class="btn small" data-t="btn_save_phrase">Save this text as a quick phrase</button></div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_history">History</h3>
+      <div id="history" class="list"></div>
+    </div>
+  </main>
+
+  <!-- LEARN : voice/text -> sign -->
+  <main id="pane-seekho" class="pane hidden">
+    <div class="card">
+      <h3 data-t="h_learn_q">Say or type — the app shows the sign</h3>
+      <div class="row" style="flex-wrap:nowrap">
+        <input id="lqIn" type="text" data-tp="ph_lq" placeholder="e.g. मुझे पानी चाहिए / I need water" autocomplete="off">
+        <button id="lqGo" class="btn primary" data-t="btn_show">Show</button>
+        <button id="lqMic" class="btn" data-ta="a_mic_ask" aria-label="Ask by speaking">🎤</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <select id="lqLang" style="width:auto"></select>
+        <select id="lqCat" style="width:auto"></select>
+      </div>
+      <div id="lqChips" class="row" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <canvas id="demo" class="demo" width="520" height="390"></canvas>
+      <div id="demoTitle" class="demo-title">—</div>
+      <div id="demoSub" class="hint"></div>
+      <div id="demoSeq" class="row" style="margin:8px 0"></div>
+      <div class="row">
+        <button id="dReplay" class="btn small" data-t="btn_replay">Watch again</button>
+        <button id="dSpeed" class="btn small"></button>
+        <button id="dSpeak" class="btn small" data-t="btn_hear">Hear it</button>
+        <label class="chk"><input id="dSay" type="checkbox" checked> <span data-t="l_say_along">Speak along</span></label>
+        <label class="chk"><input id="dMirror" type="checkbox" checked> <span data-t="l_mirror">Mirror</span></label>
+      </div>
+      <div id="dRefs" class="row" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_practice">Practice — now you sign</h3>
+      <p class="hint" style="margin:0 0 8px" data-t="prac_hint">The app says a word and shows the sign. Start the camera and make the same sign — when it is right, the next word comes.</p>
+      <div class="row">
+        <button id="pStart" class="btn primary"></button>
+        <button id="pSkip" class="btn" data-t="btn_skip">Skip</button>
+        <button id="pTry" class="btn warn hidden" data-t="btn_try">Try (motion)</button>
+      </div>
+      <div id="pText" class="prac-text"></div>
+    </div>
+  </main>
+
+  <!-- LIBRARY -->
+  <main id="pane-library" class="pane hidden">
+    <div class="card">
+      <h3 data-t="h_vocab">ISL vocabulary</h3>
+      <div class="prog"><i id="vProg"></i></div>
+      <p id="vProgText" class="hint"></p>
+      <input id="vSearch" type="text" data-tp="ph_vsearch" placeholder="Search a word (any language)" autocomplete="off" style="margin-top:8px">
+      <div id="vList" style="margin-top:8px"></div>
+      <div class="warnbox" data-t="vocab_warn">This list is only the word framework — the actual hand movements are not built in. Watch each sign in an official/verified ISL video via the “Video” link (or learn it with a deaf ISL teacher) and then record it, so the app learns and teaches correctly.</div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_custom">Create your own sign</h3>
+      <p class="hint" style="margin:0 0 6px" data-t="custom_intro">If it is not in the list, add any word or phrase yourself.</p>
+      <label class="f" for="gName" data-t="l_gname">Name (sign label)</label>
+      <input id="gName" type="text" data-tp="ph_gname" placeholder="e.g. Bhopal" autocomplete="off">
+      <div class="grid2">
+        <div><label class="f" for="gEn" data-t="l_gen">Spoken text (English)</label><input id="gEn" type="text" placeholder="Bhopal"></div>
+        <div><label class="f" for="gHi" data-t="l_ghi">Spoken text (Hindi)</label><input id="gHi" type="text" placeholder="भोपाल"></div>
+      </div>
+      <details>
+        <summary data-t="sum_other">Other languages (optional)</summary>
+        <div class="grid2">
+          <div><label class="f" for="gGu" data-t="l_ggu">Gujarati text</label><input id="gGu" type="text" placeholder="ભોપાલ"></div>
+          <div><label class="f" for="gOr" data-t="l_gor">Odia text</label><input id="gOr" type="text" placeholder="ଭୋପାଳ"></div>
+        </div>
+        <label class="f" for="gAwa" data-t="l_gawa">Awadhi text</label><input id="gAwa" type="text" placeholder="भोपाल">
+      </details>
+      <label class="f" for="gType" data-t="l_gtype">Sign type</label>
+      <select id="gType">
+        <option value="static" data-t="opt_static">Static – one hand pose</option>
+        <option value="motion" data-t="opt_motion">Motion – a moving sign</option>
+      </select>
+      <div class="row" style="margin-top:10px"><button id="btnAddG" class="btn primary" data-t="btn_add_g">Create sign</button></div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_mine">My custom signs</h3>
+      <div id="gList" class="list"></div>
+      <p class="hint" data-t="custom_hint">Static: each “Record” adds ~20 frames — record 2-3 times from different angles/distances. Motion: record at least 3-5 times.</p>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_backup">Backup / share</h3>
+      <div class="row">
+        <button id="btnExport" class="btn" data-t="btn_export">Export (JSON)</button>
+        <button id="btnImport" class="btn" data-t="btn_import">Import</button>
+        <input id="fileImport" type="file" accept="application/json" class="hidden">
+      </div>
+      <p class="hint" data-t="backup_hint">Export contains all your recorded signs. Import a well-recorded dataset on another phone/laptop to use the same signs there.</p>
+    </div>
+
+    <details>
+      <summary data-t="sum_builtin">Built-in hand poses (generic)</summary>
+      <p class="hint" data-t="builtin_hint">These are ready-made generic MediaPipe poses, not official ISL signs. You can change their text or turn them off.</p>
+      <div id="bList" class="list" style="margin-top:8px"></div>
+    </details>
+  </main>
+
+  <!-- LISTEN -->
+  <main id="pane-suno" class="pane hidden">
+    <div class="card">
+      <h3 data-t="h_listen">Turn what they say into text</h3>
+      <p class="hint" style="margin:0 0 8px" data-t="listen_hint">The hearing person speaks, and it appears here in large text — for two-way conversation.</p>
+      <div class="row" style="justify-content:space-between">
+        <select id="srLang" style="width:auto"></select>
+        <button id="btnMic" class="mic" data-ta="a_mic_toggle" aria-label="Mic on/off">🎤</button>
+      </div>
+      <div id="srText" class="big-text"></div>
+      <div id="srWarn" class="warnbox hidden" data-t="sr_warn">This browser has no speech recognition. Use Chrome on Android.</div>
+    </div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main id="pane-settings" class="pane hidden">
+    <div class="card">
+      <h3 data-t="h_lang">Languages</h3>
+      <label class="f" for="sUI" data-t="l_ui">App language (all screens)</label>
+      <select id="sUI"><option value="hi">हिन्दी (Hindi)</option><option value="en">English</option></select>
+      <label class="f" for="sLang" data-t="l_speech">Voice language (audio and voice input)</label>
+      <select id="sLang"></select>
+      <div id="langNote" class="warnbox hidden"></div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_voice">Voice quality</h3>
+      <label class="f" for="sVoice" data-t="l_voice">Voice</label>
+      <select id="sVoice"></select>
+      <div id="voiceInfo" class="warnbox hidden"></div>
+
+      <label class="f" for="sRate"><span data-t="l_rate">Speech speed:</span> <span id="vRate"></span></label>
+      <input id="sRate" type="range" min="0.5" max="1.5" step="0.05">
+      <label class="f" for="sPitch"><span data-t="l_pitch">Pitch:</span> <span id="vPitch"></span></label>
+      <input id="sPitch" type="range" min="0.6" max="1.4" step="0.05">
+      <label class="f" for="sVol"><span data-t="l_vol">Volume:</span> <span id="vVol"></span></label>
+      <input id="sVol" type="range" min="0.2" max="1" step="0.05">
+
+      <div class="row" style="margin-top:10px"><button id="btnTest" class="btn small" data-t="btn_test">Test voice</button></div>
+      <div class="warnbox" data-t="voice_tips">For the clearest voice: on Windows open Microsoft Edge (it has “Natural” online voices, often including Hindi, Gujarati and Odia). On Android install the voice for your language in Settings → Text-to-speech → Google. On iPhone go to Settings → Accessibility → Spoken Content → Voices and pick an “Enhanced” voice. Then select that voice above.</div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_style">Speaking style</h3>
+      <label class="f" for="sMode" data-t="l_when">When to speak</label>
+      <select id="sMode">
+        <option value="phrase" data-t="opt_phrase">Whole phrase together after a short pause (natural)</option>
+        <option value="word" data-t="opt_word">Right after each word</option>
+        <option value="sentence" data-t="opt_sentence">Full sentence ~2.5 s after the hand leaves</option>
+        <option value="manual" data-t="opt_manual">Only when I press “Speak”</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_recog">Recognition</h3>
+      <label class="f" for="sHold"><span data-t="l_hold">Hold time:</span> <span id="vHold"></span> <span data-t="l_ms">ms</span></label>
+      <input id="sHold" type="range" min="300" max="1500" step="50">
+      <label class="f" for="sThr"><span data-t="l_thr">Static sign strictness (lower = stricter):</span> <span id="vThr"></span></label>
+      <input id="sThr" type="range" min="0.08" max="0.40" step="0.01">
+      <label class="f" for="sMThr"><span data-t="l_mthr">Motion sign strictness (lower = stricter):</span> <span id="vMThr"></span></label>
+      <input id="sMThr" type="range" min="0.10" max="0.60" step="0.01">
+      <div class="row" style="margin-top:12px"><label class="chk"><input id="sVib" type="checkbox"> <span data-t="l_vib">Vibrate when a word is added</span></label></div>
+      <div class="row" style="margin-top:6px"><label class="chk"><input id="sSkel" type="checkbox"> <span data-t="l_skel">Show hand skeleton</span></label></div>
+      <div class="row" style="margin-top:14px"><button id="btnReset" class="btn danger" data-t="btn_reset">Reset all data</button></div>
+    </div>
+
+    <div class="card">
+      <h3 data-t="h_packs">More languages</h3>
+      <p class="hint" style="margin:0 0 8px" data-t="packs_hint">Built-in speech languages: Hindi, English, Gujarati, Odia and Awadhi (Awadhi uses the Hindi voice). To verify a translation or add another language (e.g. Marathi), export a template, fill in the words, and import it back.</p>
+      <div class="row">
+        <button id="btnPackExport" class="btn small" data-t="btn_pack_export">Export current language</button>
+        <button id="btnPackNew" class="btn small" data-t="btn_pack_new">New language template</button>
+        <button id="btnPackImport" class="btn small" data-t="btn_pack_import">Import language pack</button>
+        <input id="filePack" type="file" accept="application/json" class="hidden">
+      </div>
+    </div>
+  </main>
+
+  <footer data-t="footer">The camera needs HTTPS or localhost. Your data is saved only on your device.</footer>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script type="module">
+import { GestureRecognizer, FilesetResolver, DrawingUtils }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* ===================== PURE MATH (no DOM) ===================== */
+// <PURE>
+function handScale(h, aspect){
+  const a = h[0], b = h[9];
+  return Math.hypot((a.x - b.x) * aspect, a.y - b.y) || 1e-6;
+}
+function handFeat(h, aspect){
+  const w = h[0], s = handScale(h, aspect), out = new Array(63);
+  for (let i = 0; i < 21; i++){
+    out[i*3]   = ((h[i].x - w.x) * aspect) / s;
+    out[i*3+1] = (h[i].y - w.y) / s;
+    out[i*3+2] = ((h[i].z - w.z) * aspect) / s;
+  }
+  return out;
+}
+function frameFeatures(hands, aspect){
+  const hs = hands.slice(0, 2).sort((a, b) => a[0].x - b[0].x);
+  const zero = new Array(63).fill(0);
+  const f0 = hs[0] ? handFeat(hs[0], aspect) : zero;
+  const f1 = hs[1] ? handFeat(hs[1], aspect) : zero;
+  let dx = 0, dy = 0;
+  if (hs[1]){
+    const s = (handScale(hs[0], aspect) + handScale(hs[1], aspect)) / 2;
+    dx = ((hs[1][0].x - hs[0][0].x) * aspect) / s;
+    dy = (hs[1][0].y - hs[0][0].y) / s;
+  }
+  return f0.concat(f1, [dx, dy]);
+}
+function frameMeta(hands, aspect){
+  let cx = 0, cy = 0, sc = 0;
+  for (const h of hands){ cx += h[0].x * aspect; cy += h[0].y; sc += handScale(h, aspect); }
+  const n = hands.length || 1;
+  return { cx: cx / n, cy: cy / n, sc: sc / n };
+}
+function rms(a, b){
+  const n = Math.min(a.length, b.length); let s = 0;
+  for (let i = 0; i < n; i++){ const d = a[i] - b[i]; s += d * d; }
+  return Math.sqrt(s / n);
+}
+function rank(feat, gestures){
+  const out = [];
+  for (const g of gestures){
+    let best = Infinity;
+    for (const s of g.samples){ const d = rms(feat, s); if (d < best) best = d; }
+    if (best < Infinity) out.push({ g, d: best });
+  }
+  out.sort((a, b) => a.d - b.d);
+  return out;
+}
+function decide(ranked, thr, ambig = 1.08){
+  if (!ranked.length) return null;
+  const a = ranked[0], b = ranked[1];
+  if (a.d > thr) return null;
+  if (b && b.d <= thr && b.d < a.d * ambig) return null;
+  return { g: a.g, d: a.d, conf: Math.max(0, Math.min(1, 1 - a.d / (thr * 1.6))) };
+}
+function resample(vs, n){
+  const m = vs.length;
+  if (m === 1) return Array.from({ length: n }, () => vs[0]);
+  const out = [];
+  for (let i = 0; i < n; i++){
+    const t = i * (m - 1) / (n - 1), lo = Math.floor(t), hi = Math.min(m - 1, lo + 1), f = t - lo;
+    out.push(vs[lo].map((v, k) => v + (vs[hi][k] - v) * f));
+  }
+  return out;
+}
+function seqFeature(frames, n = 16){
+  const act = frames.filter(f => f.feat);
+  if (act.length < 5) return null;
+  const b = act[0];
+  const vs = act.map(f => f.feat.concat([(f.cx - b.cx) / b.sc, (f.cy - b.cy) / b.sc]));
+  return [].concat(...resample(vs, n));
+}
+function medoid(samples, cap = 40){
+  let c = samples;
+  if (c.length > cap){ const st = samples.length / cap; c = Array.from({ length: cap }, (_, i) => samples[Math.floor(i * st)]); }
+  if (c.length < 3) return c[0];
+  let best = c[0], bs = Infinity;
+  for (let i = 0; i < c.length; i++){
+    let s = 0; for (let j = 0; j < c.length; j++) if (i !== j) s += rms(c[i], c[j]);
+    if (s < bs){ bs = s; best = c[i]; }
+  }
+  return best;
+}
+function decodeFrame(f, cx, cy){
+  const has = o => { for (let i = 3; i < 63; i++) if (Math.abs(f[o + i]) > 1e-6) return true; return false; };
+  const p0 = has(0), p1 = has(63), dx = f[126] || 0, dy = f[127] || 0, two = p0 && p1;
+  const mk = (o, wx, wy) => { const pts = []; for (let i = 0; i < 21; i++) pts.push({ x: wx + f[o + i*3], y: wy + f[o + i*3 + 1] }); return pts; };
+  const hands = [];
+  if (p0) hands.push({ c: 0, pts: mk(0, two ? cx - dx/2 : cx, two ? cy - dy/2 : cy) });
+  if (p1) hands.push({ c: 1, pts: mk(63, two ? cx + dx/2 : cx, two ? cy + dy/2 : cy) });
+  return hands;
+}
+function normTok(s){ return (s || '').toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim(); }
+function parseQuery(q, lookup, stop){
+  const t = normTok(q).split(' ').filter(Boolean), out = [];
+  let i = 0;
+  while (i < t.length){
+    let hit = null, len = 0;
+    for (let n = Math.min(3, t.length - i); n >= 1; n--){
+      const e = lookup.get(t.slice(i, i + n).join(' '));
+      if (e){ hit = e; len = n; break; }
+    }
+    if (hit){ out.push({ e: hit }); i += len; }
+    else { if (!stop.has(t[i])) out.push({ miss: t[i] }); i++; }
+  }
+  return out;
+}
+// </PURE>
+
+/* ===================== HELPERS ===================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const tn = s => document.createTextNode(s == null ? '' : String(s));   // raw data text: never translated
+function h(tag, props = {}, ...kids){
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)){
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  // string children are UI labels (translated); use tn() for data such as sign names
+  for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : tn(typeof c === 'string' ? T(c) : c));
+  return e;
+}
+let toastT;
+function toast(msg, ms = 2600){
+  const t = $('#toast'); t.textContent = T(msg); t.classList.remove('hidden');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), ms);
+}
+const r3 = a => a.map(v => Math.round(v * 1000) / 1000);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const isDev = t => /[\u0900-\u097F]/.test(t);
+
+/* ===================== UI LANGUAGE (i18n) =====================
+   English is the source language: the HTML keeps English text with data-t="id" hooks,
+   and JS strings are English keys. HI maps ids / English keys to Hindi.
+   To add another UI language, add another dictionary and extend T() and applyStatic(). */
+const HI = {
+  title: 'साइनवाणी – ISL साइन ⇄ आवाज़',
+  brand: 'साइनवाणी', tagline: 'भारतीय सांकेतिक भाषा ⇄ आवाज़',
+  a_ui_lang: 'ऐप की भाषा', a_camera: 'कैमरा',
+  ph_title: 'कैमरा चालू करें',
+  ph_text: 'अच्छी रोशनी में अपना हाथ कैमरे के सामने रखें। सारी प्रोसेसिंग आपके डिवाइस पर ही होती है।',
+  cam_flip: 'कैमरा पलटें',
+  tab_speak: 'बोलें', tab_learn: 'सीखें', tab_library: 'लाइब्रेरी', tab_listen: 'सुनें', tab_settings: 'सेटिंग्स',
+  mode_static: 'स्थिर साइन (रोके रखें)', mode_motion: 'गतिशील साइन',
+  btn_motion: 'साइन रिकॉर्ड करें (2 सेकंड)',
+  motion_hint: 'बटन दबाएँ और 3-2-1 के बाद साइन करें। साइन पहले लाइब्रेरी में रिकॉर्ड होना चाहिए।',
+  static_hint: 'साइन को लगभग 1 सेकंड रोके रखें — शब्द अपने आप वाक्य में जुड़ जाएगा।',
+  h_sentence: 'वाक्य', btn_speak: 'बोलें', btn_undo: 'वापस', btn_clear: 'साफ़ करें', btn_copy: 'कॉपी',
+  h_type: 'लिखें और बोलें', ph_type: 'कुछ लिखें…', btn_save_phrase: 'इस टेक्स्ट को क्विक फ़्रेज़ में सेव करें',
+  h_history: 'इतिहास',
+  h_learn_q: 'बोलें या लिखें — ऐप साइन बनाकर दिखाएगा',
+  ph_lq: 'जैसे: मुझे पानी चाहिए / I need water',
+  btn_show: 'दिखाएँ', a_mic_ask: 'बोलकर पूछें',
+  btn_replay: 'फिर से देखें', btn_hear: 'सुनें', l_say_along: 'साथ में बोलें', l_mirror: 'मिरर',
+  h_practice: 'अभ्यास — अब आप साइन करें',
+  prac_hint: 'ऐप एक शब्द बोलेगा और साइन दिखाएगा। कैमरा चालू करके वही साइन बनाएँ — सही होने पर अगला शब्द आएगा।',
+  btn_skip: 'छोड़ें', btn_try: 'कोशिश करें (गति)',
+  h_vocab: 'ISL शब्दावली', ph_vsearch: 'शब्द खोजें (किसी भी भाषा में)',
+  vocab_warn: 'यह सूची केवल शब्दों का ढाँचा है — साइन के असली हाथ के इशारे इसमें पहले से नहीं हैं। हर साइन को “वीडियो” लिंक से ISL की आधिकारिक/सत्यापित वीडियो में देखकर (या किसी बधिर ISL शिक्षक के साथ) रिकॉर्ड करें, तभी ऐप सही सीखेगा और सही सिखाएगा।',
+  h_custom: 'अपना नया साइन बनाएँ',
+  custom_intro: 'सूची में न मिले तो कोई भी शब्द/वाक्य खुद जोड़ें।',
+  l_gname: 'नाम (साइन का लेबल)', ph_gname: 'जैसे: भोपाल',
+  l_gen: 'बोला जाने वाला टेक्स्ट (अंग्रेज़ी)', l_ghi: 'बोला जाने वाला टेक्स्ट (हिन्दी)',
+  sum_other: 'अन्य भाषाएँ (वैकल्पिक)', l_ggu: 'गुजराती टेक्स्ट', l_gor: 'ओड़िया टेक्स्ट', l_gawa: 'अवधी टेक्स्ट',
+  l_gtype: 'साइन का प्रकार', opt_static: 'स्थिर – हाथ की एक मुद्रा', opt_motion: 'गतिशील – हाथ हिलाने वाला साइन',
+  btn_add_g: 'साइन बनाएँ', h_mine: 'मेरे कस्टम साइन',
+  custom_hint: 'स्थिर: हर “रिकॉर्ड” में ~20 फ़्रेम जुड़ते हैं — अलग-अलग कोण/दूरी से 2-3 बार रिकॉर्ड करें। गतिशील: कम से कम 3-5 बार रिकॉर्ड करें।',
+  h_backup: 'बैकअप / शेयर', btn_export: 'एक्सपोर्ट (JSON)', btn_import: 'इम्पोर्ट',
+  backup_hint: 'एक्सपोर्ट में आपके सारे रिकॉर्ड किए हुए साइन होते हैं। अच्छे से रिकॉर्ड किया हुआ डेटासेट दूसरे फ़ोन/लैपटॉप में इम्पोर्ट करके वही साइन वहाँ भी इस्तेमाल कर सकते हैं।',
+  sum_builtin: 'बिल्ट-इन हाथ की मुद्राएँ (सामान्य)',
+  builtin_hint: 'ये MediaPipe की तैयार सामान्य मुद्राएँ हैं, आधिकारिक ISL साइन नहीं। इनका टेक्स्ट बदल सकते हैं या बंद कर सकते हैं।',
+  h_listen: 'सामने वाले की बात टेक्स्ट में',
+  listen_hint: 'सुनने वाला व्यक्ति बोलेगा और यहाँ बड़े अक्षरों में लिखा आएगा — दो-तरफ़ा बातचीत के लिए।',
+  a_mic_toggle: 'माइक चालू/बंद',
+  sr_warn: 'इस ब्राउज़र में आवाज़ पहचान (स्पीच रिकग्निशन) नहीं है। Android पर Chrome इस्तेमाल करें।',
+  h_lang: 'भाषाएँ', l_ui: 'ऐप की भाषा (सभी स्क्रीन)', l_speech: 'आवाज़ की भाषा (ऑडियो और आवाज़ से इनपुट)',
+  h_voice: 'आवाज़ की गुणवत्ता', l_voice: 'आवाज़ (वॉइस)',
+  l_rate: 'बोलने की गति:', l_pitch: 'पिच:', l_vol: 'वॉल्यूम:', btn_test: 'आवाज़ टेस्ट करें',
+  voice_tips: 'सबसे साफ़ आवाज़ के लिए: Windows पर Microsoft Edge खोलें (उसमें “Natural” ऑनलाइन आवाज़ें मिलती हैं, अक्सर हिन्दी, गुजराती और ओड़िया की भी)। Android पर सेटिंग्स → टेक्स्ट-टू-स्पीच → Google में अपनी भाषा की आवाज़ डाउनलोड करें। iPhone पर सेटिंग्स → एक्सेसिबिलिटी → स्पोकन कंटेंट → वॉइस में “Enhanced” आवाज़ चुनें। फिर ऊपर वही आवाज़ चुनें।',
+  h_style: 'बोलने का तरीका', l_when: 'कब बोलें',
+  opt_phrase: 'छोटे विराम के बाद पूरा वाक्यांश एक साथ (स्वाभाविक)',
+  opt_word: 'हर शब्द के तुरंत बाद',
+  opt_sentence: 'हाथ हटाने के ~2.5 सेकंड बाद पूरा वाक्य',
+  opt_manual: 'केवल “बोलें” बटन दबाने पर',
+  h_recog: 'पहचान (रिकग्निशन)', l_hold: 'रोके रखने का समय:', l_ms: 'मि.से.',
+  l_thr: 'स्थिर साइन की सख़्ती (कम = ज़्यादा सख़्त):', l_mthr: 'गतिशील साइन की सख़्ती (कम = ज़्यादा सख़्त):',
+  l_vib: 'शब्द जुड़ने पर वाइब्रेट करें', l_skel: 'हाथ का स्केलेटन दिखाएँ', btn_reset: 'सारा डेटा रीसेट करें',
+  h_packs: 'और भाषाएँ',
+  packs_hint: 'इनबिल्ट आवाज़ की भाषाएँ: हिन्दी, अंग्रेज़ी, गुजराती, ओड़िया और अवधी (अवधी में हिन्दी आवाज़ इस्तेमाल होती है)। किसी अनुवाद को जाँचने या नई भाषा (जैसे मराठी) जोड़ने के लिए टेम्पलेट एक्सपोर्ट करें, शब्द भरें और वापस इम्पोर्ट करें।',
+  btn_pack_export: 'मौजूदा भाषा एक्सपोर्ट करें', btn_pack_new: 'नई भाषा का टेम्पलेट', btn_pack_import: 'भाषा पैक इम्पोर्ट करें',
+  footer: 'कैमरे के लिए HTTPS या localhost ज़रूरी है। आपका डेटा सिर्फ़ आपके डिवाइस में सेव होता है।',
+
+  /* ---- English keys used in JS ---- */
+  'Camera is off': 'कैमरा बंद है', 'Loading model…': 'मॉडल लोड हो रहा है…', 'Live': 'लाइव', 'Error': 'त्रुटि', 'HTTPS needed': 'HTTPS चाहिए',
+  'Start camera': 'कैमरा चालू करें', 'Stop camera': 'कैमरा बंद करें',
+  'Open this page over HTTPS or localhost to use the camera.': 'कैमरे के लिए यह पेज HTTPS या localhost पर खोलें।',
+  'Please allow camera permission.': 'कृपया कैमरे की अनुमति दें।',
+  'Could not start camera/model: {m}': 'कैमरा/मॉडल शुरू नहीं हुआ: {m}',
+  'Could not flip the camera': 'कैमरा पलट नहीं पाया',
+  'Start the camera first': 'पहले कैमरा चालू करें',
+  'Could not save data. Please export a backup.': 'डेटा सेव नहीं हो पा रहा। कृपया बैकअप एक्सपोर्ट कर लें।',
+  'Hand detected': 'हाथ दिख रहा है', 'No hand seen': 'हाथ नहीं दिखा',
+  'Motion mode: press “Record sign”': 'गति मोड: “साइन रिकॉर्ड करें” दबाएँ',
+  'Sign not recognised': 'साइन पहचाना नहीं गया',
+  'If the sign is not recorded, record it in the Library first': 'अगर साइन रिकॉर्ड नहीं है तो पहले लाइब्रेरी में रिकॉर्ड करें',
+  '{p}% match': '{p}% मेल', ' (test mode)': ' (टेस्ट मोड)',
+  'Get ready…': 'तैयार हो जाइए…', 'Recording…': 'रिकॉर्ड हो रहा है…', '{n} frames': '{n} फ़्रेम',
+  'Record a motion sign in the Library first.': 'पहले लाइब्रेरी में कोई गतिशील साइन रिकॉर्ड करें।',
+  'Recognised: {n} ({p}%)': 'पहचाना: {n} ({p}%)',
+  'No sure match — pick one below': 'पक्का मेल नहीं मिला — नीचे से चुनें',
+  'Wrong? Pick the right one:': 'गलत लगा? सही चुनें:', 'Closest matches:': 'सबसे क़रीबी:',
+  'Hand was not fully visible. Try again.': 'हाथ पूरी तरह नहीं दिखा। फिर से कोशिश करें।',
+  '{n} – get the pose ready': '{n} – मुद्रा तैयार करें', '{n} – get ready to sign': '{n} – साइन के लिए तैयार हों',
+  '{n} samples added': '{n} सैंपल जुड़े', 'Recording added ({n})': 'रिकॉर्डिंग जुड़ गई ({n})',
+  '{a} / {b} signs ready (recorded)': '{a} / {b} साइन तैयार (रिकॉर्ड हो चुके)',
+  'static': 'स्थिर', 'motion': 'गतिशील', '{n} (few)': '{n} (कम)',
+  'Record': 'रिकॉर्ड', 'Record more': 'और रिकॉर्ड करें', 'View': 'देखें', 'Clear': 'साफ़', 'Video': 'वीडियो',
+  'Clear the samples of {w}?': '{w} के सैंपल हटाएँ?', 'Delete {w}?': '{w} डिलीट करें?',
+  'No matches. Add a custom sign below.': 'कुछ नहीं मिला। नीचे से कस्टम साइन जोड़ें।',
+  'No custom signs yet.': 'अभी कोई कस्टम साइन नहीं।',
+  '{n} samples': '{n} सैंपल', '{n} recordings': '{n} रिकॉर्डिंग', 'Delete': 'डिलीट', 'Clear samples': 'सैंपल साफ़ करें',
+  'Enter a sign name': 'साइन का नाम लिखें', 'A sign with this name already exists': 'इस नाम का साइन पहले से है',
+  'Sign created — now press “Record”': 'साइन बन गया — अब “रिकॉर्ड” दबाएँ',
+  'Import complete': 'इम्पोर्ट हो गया', 'Invalid file': 'फ़ाइल सही नहीं है',
+  'Static sign · built from {n} samples': 'स्थिर साइन · {n} सैंपल से बनाया गया',
+  'Motion sign · built from {n} recordings': 'गतिशील साइन · {n} रिकॉर्डिंग से बनाया गया',
+  'This sign has no recording yet.\nRecord it in the Library or watch the video link.': 'इस साइन की रिकॉर्डिंग अभी नहीं है।\nलाइब्रेरी में रिकॉर्ड करें या वीडियो लिंक देखें।',
+  '“{w}” — no sign found.\nWatch the video link.': '“{w}” का साइन नहीं मिला।\nवीडियो लिंक देखें।',
+  'No recording yet — see the links below for the real sign.': 'रिकॉर्डिंग नहीं है — असली साइन के लिए नीचे के लिंक देखें।',
+  'This word is not in the list.': 'यह शब्द सूची में नहीं है।',
+  'Nothing found': 'कुछ नहीं मिला', 'The sign will appear here': 'साइन यहाँ दिखेगा',
+  'Type or say something above, or pick a word from a category.': 'ऊपर कुछ लिखें/बोलें, या श्रेणी से शब्द चुनें।',
+  'Pick from a category…': 'श्रेणी से चुनें…',
+  'Watch video (YouTube)': 'वीडियो देखें (YouTube)', 'ISL Portal': 'ISL पोर्टल',
+  'No word recognised. Try another word.': 'कोई शब्द नहीं पहचाना। दूसरा शब्द आज़माएँ।',
+  'Speed {x}x': 'गति {x}x', 'Listening…': 'सुन रहा हूँ…',
+  'Voice input is not supported in this browser. Use Chrome on Android.': 'इस ब्राउज़र में आवाज़ से इनपुट नहीं चलता। Android पर Chrome इस्तेमाल करें।',
+  'Please allow microphone permission': 'कृपया माइक की अनुमति दें',
+  'Could not understand the audio': 'आवाज़ समझ नहीं आई',
+  'Voice input is not available for this language in this browser.': 'इस ब्राउज़र में इस भाषा के लिए आवाज़ से इनपुट उपलब्ध नहीं है।',
+  'Make this sign: {w}   ({a}/{b})': 'यह साइन बनाएँ: {w}   ({a}/{b})', 'Score: {a} / {b}': 'स्कोर: {a} / {b}',
+  'Great! {p}%': 'शाबाश! {p}%', 'Match {p}% — watch the demo and try again': 'मेल {p}% — डेमो देखकर फिर कोशिश करें',
+  'Press “Try” below': 'नीचे “कोशिश करें” दबाएँ', 'Show your hand': 'अपना हाथ दिखाएँ',
+  '{p}% — hold steady': '{p}% — रोके रखें', 'Match {p}% — copy the demo': 'मेल {p}% — डेमो जैसा बनाएँ',
+  'Start practice': 'अभ्यास शुरू करें', 'Stop practice': 'अभ्यास बंद करें',
+  'Record some signs in the Library first': 'पहले लाइब्रेरी में कुछ साइन रिकॉर्ड करें',
+  'Reset complete': 'रीसेट हो गया',
+  'All signs and settings will be deleted. Export a backup first. Continue?': 'सारे साइन और सेटिंग्स डिलीट हो जाएँगे। पहले बैकअप एक्सपोर्ट कर लें। आगे बढ़ें?',
+  'Copied': 'कॉपी हो गया', 'Could not copy': 'कॉपी नहीं हो पाया', 'Write some text first': 'पहले कुछ टेक्स्ट लिखें',
+  'Quick phrase saved': 'क्विक फ़्रेज़ सेव हो गया', 'The sentence is empty': 'वाक्य खाली है', 'Nothing yet.': 'अभी कुछ नहीं।',
+  'Words will appear here as you sign…': 'साइन करते ही शब्द यहाँ जुड़ेंगे…', 'Tap to remove': 'हटाने के लिए टैप करें', 'Speak again': 'फिर से बोलें',
+  'Auto (best voice)': 'ऑटो (सबसे अच्छी आवाज़)', 'online': 'ऑनलाइन',
+  'Text-to-speech is not available in this browser.': 'इस ब्राउज़र में टेक्स्ट-टू-स्पीच उपलब्ध नहीं है।',
+  'No {lang} voice was found on this device, so speech falls back to Hindi/English. Install a voice using the tips below.': 'इस डिवाइस पर {lang} की आवाज़ नहीं मिली, इसलिए आवाज़ हिन्दी/अंग्रेज़ी में बोली जाएगी। नीचे दिए सुझावों से आवाज़ इंस्टॉल करें।',
+  'No {lang} voice on this device. See the tips in Settings to install one.': 'इस डिवाइस पर {lang} की आवाज़ नहीं है। इंस्टॉल करने के लिए सेटिंग्स के सुझाव देखें।',
+  'Awadhi has no dedicated voice — the Hindi voice reads Awadhi text. Some words are the same as Hindi. Please verify wording with a native speaker.': 'अवधी की अलग आवाज़ नहीं होती — अवधी टेक्स्ट हिन्दी आवाज़ में पढ़ा जाता है। कुछ शब्द हिन्दी जैसे ही हैं। कृपया शब्दों की जाँच किसी अवधी भाषी से करवा लें।',
+  'Language pack imported': 'भाषा पैक इम्पोर्ट हो गया', 'Invalid language pack': 'भाषा पैक सही नहीं है',
+  'Language code (e.g. mr)': 'भाषा कोड (जैसे mr)', 'Language name (e.g. Marathi)': 'भाषा का नाम (जैसे Marathi)', 'Voice locale (e.g. mr-IN)': 'वॉइस लोकेल (जैसे mr-IN)',
+  'Template downloaded — fill in the words and import it back.': 'टेम्पलेट डाउनलोड हो गया — शब्द भरकर वापस इम्पोर्ट करें।',
+  'Open Palm': 'खुली हथेली', 'Closed Fist': 'बंद मुट्ठी', 'Thumb Up': 'अंगूठा ऊपर', 'Thumb Down': 'अंगूठा नीचे', 'Pointing Up': 'उँगली ऊपर', 'Victory': 'विक्ट्री (V)', 'ILoveYou': 'आई लव यू'
+};
+const CAT_HI = {
+  'Alphabet (A–Z)': 'वर्णमाला (A–Z)', 'Numbers (0–9)': 'संख्याएँ (0–9)', 'Greetings & basics': 'अभिवादन और बुनियादी',
+  'Pronouns': 'सर्वनाम', 'Family & people': 'परिवार और लोग', 'Needs, health & safety': 'ज़रूरतें, स्वास्थ्य और सुरक्षा',
+  'Questions': 'प्रश्न', 'Actions': 'क्रियाएँ', 'Feelings & describing': 'भावनाएँ और विशेषण', 'Time & days': 'समय और दिन',
+  'Colours': 'रंग', 'School & work': 'स्कूल और काम', 'Places, food & things': 'जगहें, खाना और चीज़ें', 'Custom': 'कस्टम'
+};
+const MISSING = new Set();
+function T(s, p){
+  let r = s;
+  if (db.settings.ui === 'hi'){
+    const x = HI[s];
+    if (x !== undefined) r = x; else if (/[A-Za-z]/.test(s) && !isDev(s)) MISSING.add(s);
+  }
+  return p ? r.replace(/\{(\w+)\}/g, (m, k) => p[k] !== undefined ? p[k] : m) : r;
+}
+const EN_ATTR = { t: null, tp: 'placeholder', ta: 'aria-label', tt: 'title' };
+function applyStatic(){
+  const hi = db.settings.ui === 'hi';
+  for (const [k, attr] of Object.entries(EN_ATTR)){
+    $$('[data-' + k + ']').forEach(el => {
+      const id = el.getAttribute('data-' + k), sk = 'src' + k;
+      if (el.dataset[sk] === undefined) el.dataset[sk] = attr ? (el.getAttribute(attr) || '') : el.textContent.trim();
+      let val = el.dataset[sk];
+      if (hi){ if (HI[id] !== undefined) val = HI[id]; else MISSING.add(id); }
+      if (attr) el.setAttribute(attr, val); else el.textContent = val;
+    });
+  }
+  document.documentElement.lang = hi ? 'hi' : 'en';
+  document.title = hi ? HI.title : 'SignVaani – ISL Sign ⇄ Voice';
+}
+
+/* ===================== STORAGE (IndexedDB, falls back to localStorage) ===================== */
+const KEY = 'signvaani.v1';
+const IDB = {
+  _d: null,
+  open(){
+    if (this._d) return Promise.resolve(this._d);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('signvaani', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => { this._d = r.result; res(r.result); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async get(k){ const d = await this.open(); return new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  async set(k, v){ const d = await this.open(); return new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); }); }
+};
+
+// tr = translations for the other speech languages (gu = Gujarati, or = Odia, awa = Awadhi)
+const BUILTIN_DEFAULT = {
+  Open_Palm:   { en: 'Hello',      hi: 'नमस्ते',      on: true, tr: { gu: 'નમસ્તે', or: 'ନମସ୍କାର', awa: 'राम राम' } },
+  Closed_Fist: { en: 'Wait',       hi: 'रुकिए',       on: true, tr: { gu: 'રાહ જુઓ', or: 'ଅପେକ୍ଷା କର', awa: 'रुकौ' } },
+  Thumb_Up:    { en: 'Yes, okay',  hi: 'हाँ, ठीक है',  on: true, tr: { gu: 'હા, બરાબર', or: 'ହଁ, ଠିକ୍ ଅଛି', awa: 'हाँ, ठीक बा' } },
+  Thumb_Down:  { en: 'No',         hi: 'नहीं',        on: true, tr: { gu: 'ના', or: 'ନା', awa: 'नाहीं' } },
+  Pointing_Up: { en: 'Attention',  hi: 'ध्यान दीजिए',  on: true, tr: { gu: 'ધ્યાન આપો', or: 'ଧ୍ୟାନ ଦିଅନ୍ତୁ', awa: 'ध्यान देव' } },
+  Victory:     { en: 'Peace',      hi: 'शांति',       on: true, tr: { gu: 'શાંતિ', or: 'ଶାନ୍ତି', awa: 'शांति' } },
+  ILoveYou:    { en: 'I love you', hi: 'मैं आपसे प्यार करता हूँ', on: true, tr: { gu: 'હું તમને પ્રેમ કરું છું', or: 'ମୁଁ ଆପଣଙ୍କୁ ଭଲ ପାଏ', awa: 'हम तोहसे प्रेम करित हन' } }
+};
+const QUICK = [
+  { id: 'q_help',    en: 'Help me',                hi: 'मुझे मदद चाहिए',           tr: { gu: 'મને મદદ કરો', or: 'ମୋତେ ସାହାଯ୍ୟ କରନ୍ତୁ', awa: 'हमार मदद करौ' } },
+  { id: 'q_water',   en: 'I need water',           hi: 'मुझे पानी चाहिए',           tr: { gu: 'મને પાણી જોઈએ છે', or: 'ମୋତେ ପାଣି ଦରକାର', awa: 'हमका पानी चाही' } },
+  { id: 'q_thanks',  en: 'Thank you',              hi: 'धन्यवाद',                 tr: { gu: 'આભાર', or: 'ଧନ୍ୟବାଦ', awa: 'धन्यवाद' } },
+  { id: 'q_write',   en: 'Please write it down',   hi: 'कृपया लिखकर बताइए',        tr: { gu: 'કૃપા કરીને લખીને જણાવો', or: 'ଦୟାକରି ଲେଖି କୁହନ୍ତୁ', awa: 'कृपा करि के लिखि देव' } },
+  { id: 'q_slow',    en: 'Please speak slowly',    hi: 'कृपया धीरे बोलिए',          tr: { gu: 'કૃપા કરીને ધીમે બોલો', or: 'ଦୟାକରି ଧୀରେ କୁହନ୍ତୁ', awa: 'कृपा करि धीरे बोलौ' } },
+  { id: 'q_doctor',  en: 'Please call a doctor',   hi: 'कृपया डॉक्टर को बुलाइए',    tr: { gu: 'કૃપા કરીને ડૉક્ટરને બોલાવો', or: 'ଦୟାକରି ଡାକ୍ତରଙ୍କୁ ଡାକନ୍ତୁ', awa: 'कृपा करि डाक्टर का बोलावौ' } },
+  { id: 'q_deaf',    en: 'I cannot hear',          hi: 'मैं सुन नहीं सकता',         tr: { gu: 'હું સાંભળી શકતો નથી', or: 'ମୁଁ ଶୁଣିପାରୁନାହିଁ', awa: 'हम सुनि नाहीं सकित' } }
+];
+function defaults(){
+  return { v: 1, gestures: [], builtin: JSON.parse(JSON.stringify(BUILTIN_DEFAULT)), phrases: [], history: [], packs: {},
+    settings: { ui: 'hi', speech: 'hi', voices: {}, speakMode: 'phrase', rate: 0.95, pitch: 1, volume: 1,
+      holdMs: 700, thr: 0.18, mthr: 0.30, vibrate: true, skeleton: true, mirror: true } };
+}
+async function loadDB(){
+  const d = defaults(); let j = null;
+  try{ j = await IDB.get('db'); }catch(e){}
+  if (!j){ try{ j = JSON.parse(localStorage.getItem(KEY) || 'null'); }catch(e){} }
+  if (j && j.v === 1){
+    d.gestures = j.gestures || []; Object.assign(d.builtin, j.builtin || {});
+    d.phrases = j.phrases || []; d.history = j.history || []; d.packs = j.packs || {};
+    const s = j.settings || {};
+    Object.assign(d.settings, s);
+    if (s.pitch === undefined) d.settings.speakMode = 'phrase';                                   // upgrade from v1
+    if (!s.speech) d.settings.speech = String(s.lang || 'hi').startsWith('en') ? 'en' : 'hi';       // old single "lang" setting
+    if (!s.ui) d.settings.ui = 'hi';
+    if (!s.voices || typeof s.voices !== 'object') d.settings.voices = {};
+    if (s.voiceHi && !d.settings.voices.hi) d.settings.voices.hi = s.voiceHi;
+    if (s.voiceEn && !d.settings.voices.en) d.settings.voices.en = s.voiceEn;
+  }
+  return d;
+}
+let db = await loadDB();
+let saveT = 0;
+function save(){ clearTimeout(saveT); saveT = setTimeout(flushSave, 350); }
+async function flushSave(){
+  clearTimeout(saveT);
+  try{ await IDB.set('db', db); }
+  catch(e){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e2){ toast('Could not save data. Please export a backup.'); } }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
+
+/* ===================== ISL VOCABULARY (word list — sign data comes from user recordings) ===================== */
+const LETTER_HI = ['ए','बी','सी','डी','ई','एफ','जी','एच','आई','जे','के','एल','एम','एन','ओ','पी','क्यू','आर','एस','टी','यू','वी','डब्ल्यू','एक्स','वाई','ज़ेड'];
+const NUM_HI  = ['शून्य','एक','दो','तीन','चार','पाँच','छह','सात','आठ','नौ'];
+const NUM_GU  = ['શૂન્ય','એક','બે','ત્રણ','ચાર','પાંચ','છ','સાત','આઠ','નવ'];
+const NUM_OR  = ['ଶୂନ୍ୟ','ଏକ','ଦୁଇ','ତିନି','ଚାରି','ପାଞ୍ଚ','ଛଅ','ସାତ','ଆଠ','ନଅ'];
+const NUM_AWA = ['शून्य','एक','दुइ','तीन','चारि','पाँच','छह','सात','आठ','नौ'];
+// line format:  English | Hindi | alt words (comma) | Gujarati | Odia | Awadhi
+// In Gujarati/Odia/Awadhi, "a/b" = first form is spoken, all forms are recognised. Empty Awadhi = same as Hindi.
+// NOTE: gu/or/awa wording is a best-effort starting point — please verify with native speakers (Settings → More languages).
+const WORDS = {
+'Greetings & basics': `Hello|नमस्ते|namaste,hi|નમસ્તે|ନମସ୍କାର|राम राम
+Good morning|सुप्रभात||સુપ્રભાત|ସୁପ୍ରଭାତ|
+Good night|शुभ रात्रि||શુભ રાત્રિ|ଶୁଭ ରାତ୍ରି|
+Thank you|धन्यवाद|शुक्रिया,thanks|આભાર/ધન્યવાદ|ଧନ୍ୟବାଦ|
+Sorry|माफ़ कीजिए|माफी,क्षमा|દિલગીર છું/માફ કરજો|କ୍ଷମା କରନ୍ତୁ|
+Please|कृपया||કૃપા કરીને|ଦୟାକରି|
+Welcome|स्वागत है|स्वागत|સ્વાગત છે|ସ୍ୱାଗତ|
+Goodbye|अलविदा|bye|આવજો|ବିଦାୟ|
+Yes|हाँ|हां,जी|હા|ହଁ|
+No|नहीं||ના|ନା|नाहीं
+OK|ठीक है|ठीक|બરાબર|ଠିକ୍ ଅଛି|
+Name|नाम||નામ|ନାମ|
+Nice to meet you|आपसे मिलकर खुशी हुई||તમને મળીને આનંદ થયો|ଆପଣଙ୍କୁ ଭେଟି ଖୁସି ଲାଗିଲା|
+Excuse me|सुनिए||માફ કરશો|ଶୁଣନ୍ତୁ|
+Again|दोबारा|फिर से|ફરીથી|ପୁଣି|
+More|और|ज़्यादा|વધુ|ଅଧିକ|
+Finished|खत्म|समाप्त,done|પૂરું|ଶେଷ|`,
+'Pronouns': `I|मैं|मै,मुझे,मुझको,me|હું/મને|ମୁଁ/ମୋତେ|हम
+My|मेरा|मेरी,मेरे,mine|મારું/મારી/મારો|ମୋର|हमार/मोर
+You|आप|तुम,तुम्हें,आपको|તમે/તને|ଆପଣ/ତୁମେ|तुम/तू
+Your|आपका|आपकी,आपके,तुम्हारा|તમારું/તમારી/તમારો|ଆପଣଙ୍କ/ତୁମର|तोहार
+He or she|वह|वो,he,she,उसे|તે/તેણી|ସେ|ऊ
+We|हम|हमें,us|આપણે/અમે|ଆମେ|हम सब
+They|वे|वो लोग|તેઓ|ସେମାନେ|ऊ सब
+This|यह|ये|આ|ଏହା/ଏ|ई
+Here|यहाँ|यहां|અહીં|ଏଠାରେ|इहाँ
+There|वहाँ|वहां|ત્યાં|ସେଠାରେ|उहाँ`,
+'Family & people': `Mother|माँ|मां,माता,mom|મા/માતા|ମା|माई
+Father|पिता|पापा,dad|પિતા/પપ્પા|ବାପା/ପିତା|बाबू
+Brother|भाई||ભાઈ|ଭାଇ|भैया
+Sister|बहन||બહેન|ଭଉଣୀ|बहिनी
+Grandmother|दादी|नानी|દાદી/નાની|ଜେଜେମା/ଆଈ|
+Grandfather|दादा|नाना|દાદા/નાના|ଜେଜେବାପା/ଅଜା|
+Son|बेटा||દીકરો|ପୁଅ|बेटवा
+Daughter|बेटी||દીકરી|ଝିଅ|बिटिया
+Husband|पति||પતિ|ସ୍ୱାମୀ|
+Wife|पत्नी||પત્ની|ସ୍ତ୍ରୀ|
+Friend|दोस्त|मित्र|મિત્ર/દોસ્ત|ବନ୍ଧୁ|संगी
+Family|परिवार||પરિવાર|ପରିବାର|
+Child|बच्चा|बच्चे,baby|બાળક|ପିଲା|लरिका
+Man|आदमी|पुरुष|માણસ/પુરુષ|ପୁରୁଷ/ମଣିଷ|
+Woman|औरत|महिला|સ્ત્રી/મહિલા|ମହିଳା|
+Neighbour|पड़ोसी||પાડોશી|ପଡ଼ିଶା|
+Deaf|बधिर|बहरा|બધિર/બહેરો|ବଧିର|
+Person|व्यक्ति|इंसान|વ્યક્તિ|ବ୍ୟକ୍ତି|`,
+'Needs, health & safety': `Water|पानी||પાણી|ପାଣି|
+Food|खाना|भोजन|ખાવાનું/ભોજન|ଖାଇବା/ଖାଦ୍ୟ|
+Toilet|शौचालय|टॉयलेट|શૌચાલય|ଶୌଚାଳୟ|
+Help|मदद|सहायता|મદદ|ସାହାଯ୍ୟ|
+Medicine|दवाई|दवा|દવા|ଔଷଧ|
+Doctor|डॉक्टर||ડૉક્ટર|ଡାକ୍ତର|
+Hospital|अस्पताल||હોસ્પિટલ|ଡାକ୍ତରଖାନା/ହସ୍ପିଟାଲ୍|
+Pain|दर्द||દુખાવો|ଯନ୍ତ୍ରଣା/ବ୍ୟଥା|
+Sick|बीमार||બીમાર|ଅସୁସ୍ଥ|
+Emergency|आपातकाल|इमरजेंसी|કટોકટી|ଜରୁରୀକାଳୀନ|
+Money|पैसा|पैसे,रुपये|પૈસા|ଟଙ୍କା/ପଇସା|पइसा
+Home|घर||ઘર|ଘର|
+School|स्कूल|विद्यालय|શાળા|ବିଦ୍ୟାଳୟ|
+Police|पुलिस||પોલીસ|ପୋଲିସ୍|
+Fire|आग||આગ|ନିଆଁ|
+Danger|खतरा||ખતરો|ବିପଦ|
+Bathroom|बाथरूम|गुसलखाना|બાથરૂમ|ସ୍ନାନଘର|
+Bed|बिस्तर|पलंग|પથારી|ଖଟ|`,
+'Questions': `What|क्या||શું|କ'ଣ|का
+Where|कहाँ|कहां|ક્યાં|କେଉଁଠି|
+When|कब||ક્યારે|କେବେ|
+Why|क्यों||કેમ|କାହିଁକି|काहे
+Who|कौन||કોણ|କିଏ|
+How|कैसे||કેવી રીતે|କେମିତି|कइसे
+How much|कितना|कितने,कितनी|કેટલું|କେତେ|केतना
+Which|कौन सा|कौनसा|કયું|କେଉଁ|
+What time|कितने बजे||કેટલા વાગ્યા|କେତେ ବାଜିଲା|`,
+'Actions': `Eat|खाओ|खा,खाना खाओ|ખાઓ/ખાવું|ଖାଅ|खाव
+Drink|पियो|पी,पीना,पिओ|પીઓ/પીવું|ପିଅ|पियव
+Go|जाओ|जा,जाना,जाता,जाती|જાઓ/જવું|ଯାଅ|जाव
+Come|आओ|आ,आना,आता,आती|આવો/આવવું|ଆସ|आव
+Sit|बैठो|बैठना|બેસો|ବସ|बैठव
+Stand|खड़े हो|खड़ा|ઊભા રહો|ଠିଆ ହୁଅ|
+Sleep|सोओ|सोना,सो|સૂઓ/સૂવું|ଶୋଅ|सोव
+Read|पढ़ो|पढ़ना,पढ़|વાંચો/વાંચવું|ପଢ଼|
+Write|लिखो|लिखना,लिख|લખો/લખવું|ଲେଖ|
+Learn|सीखो|सीखना|શીખો/શીખવું|ଶିଖ|
+Teach|सिखाओ|सिखाना|શીખવો|ଶିଖାଅ|
+Play|खेलो|खेलना|રમો/રમવું|ଖେଳ|
+Work|काम|करना|કામ|କାମ|
+Give|दो|देना|આપો|ଦିଅ|देव
+Take|लो|लेना|લો|ନିଅ|लेव
+See|देखो|देखना,देख|જુઓ/જોવું|ଦେଖ|देखव
+Listen|सुनो|सुनना,सुन|સાંભળો|ଶୁଣ|सुनव
+Speak|बोलो|बोलना|બોલો/બોલવું|କୁହ|बोलव
+Know|जानना|जानता,जानती,पता|જાણવું|ଜାଣିବା|
+Understand|समझ|समझना,समझा|સમજો/સમજવું|ବୁଝ|
+Want|चाहिए|चाहता,चाहती,चाहना,need|જોઈએ|ଦରକାର/ଚାହେଁ|चाही
+Love|प्यार|प्रेम|પ્રેમ|ପ୍ରେମ|
+Like|पसंद||પસંદ|ପସନ୍ଦ|
+Wait|इंतज़ार|प्रतीक्षा|રાહ જુઓ|ଅପେକ୍ଷା|
+Stop|रुको|रुकना|અટકો/રોકાઓ|ଅଟକ|
+Open|खोलो|खोलना|ખોલો|ଖୋଲ|
+Close|बंद करो|बंद|બંધ કરો|ବନ୍ଦ କର|
+Buy|खरीदो|खरीदना|ખરીદો|କିଣ|
+Sell|बेचो|बेचना|વેચો|ବିକ|
+Walk|चलो|चलना|ચાલો|ଚାଲ|
+Run|दौड़ो|दौड़ना|દોડો|ଦୌଡ଼|
+Wash|धोओ|धोना|ધોવો|ଧୋଅ|
+Cook|पकाओ|पकाना|રાંધો|ରାନ୍ଧ|
+Call|बुलाओ|बुलाना|બોલાવો|ଡାକ|
+Sing|गाओ|गाना|ગાઓ|ଗାଅ|
+Dance|नाचो|नाचना|નાચો|ନାଚ|
+Laugh|हँसो|हँसना|હસો|ହସ|
+Cry|रोओ|रोना|રડો|କାନ୍ଦ|
+Help me|मेरी मदद करो||મને મદદ કરો|ମୋତେ ସାହାଯ୍ୟ କର|हमार मदद करौ`,
+'Feelings & describing': `Happy|खुश|खुशी|ખુશ|ଖୁସି|
+Sad|दुखी|उदास|દુઃખી|ଦୁଃଖୀ|
+Angry|गुस्सा|नाराज़|ગુસ્સો|ରାଗ|
+Hungry|भूखा|भूख|ભૂખ્યો/ભૂખ|ଭୋକିଲା/ଭୋକ|
+Thirsty|प्यासा|प्यास|તરસ્યો/તરસ|ଶୋଷ|
+Tired|थका हुआ|थका|થાકેલો/થાક|କ୍ଳାନ୍ତ|
+Afraid|डर|डरा हुआ|ડર|ଡର|
+Good|अच्छा|अच्छी|સારું/સારો|ଭଲ|नीक
+Bad|बुरा|बुरी|ખરાબ|ଖରାପ|
+Big|बड़ा|बड़ी|મોટું/મોટો|ବଡ଼|
+Small|छोटा|छोटी|નાનું/નાનો|ଛୋଟ|
+Hot|गर्म|गरम|ગરમ|ଗରମ|
+Cold|ठंडा|ठंड|ઠંડું/ઠંડી|ଥଣ୍ଡା|
+New|नया|नई|નવું/નવો|ନୂଆ|
+Old|पुराना|पुरानी|જૂનું/જૂનો|ପୁରୁଣା|
+Beautiful|सुंदर|खूबसूरत|સુંદર|ସୁନ୍ଦର|
+Easy|आसान||સરળ|ସହଜ|
+Difficult|मुश्किल|कठिन|મુશ્કેલ|କଠିନ|
+Fast|तेज़|जल्दी|ઝડપી|ଶୀଘ୍ର|
+Slow|धीरे||ધીમે|ଧୀରେ|
+Clean|साफ़|साफ|સ્વચ્છ|ସଫା|
+Dirty|गंदा||ગંદું|ମଇଳା|
+True|सच||સત્ય|ସତ|
+Wrong|गलत||ખોટું|ଭୁଲ|
+Right|सही||સાચું|ଠିକ୍|
+Many|बहुत|ज़्यादा|ઘણું|ଅନେକ|
+Few|कम||થોડું|କମ୍|
+Same|एक जैसा|समान|સરખું|ସମାନ|
+Different|अलग|अलग है|અલગ|ଅଲଗା|`,
+'Time & days': `Today|आज||આજે|ଆଜି|आजु
+Tomorrow|कल|आने वाला कल|આવતીકાલે/કાલે|ଆସନ୍ତାକାଲି|काल्हि
+Yesterday|बीता कल|गुज़रा कल|ગઈકાલે|ଗତକାଲି|
+Now|अभी|अब|હમણાં/અત્યારે|ଏବେ|
+Morning|सुबह||સવાર|ସକାଳ|
+Afternoon|दोपहर||બપોર|ଅପରାହ୍ନ|
+Evening|शाम||સાંજ|ସନ୍ଧ୍ୟା|
+Night|रात||રાત|ରାତି|राति
+Day|दिन||દિવસ|ଦିନ|
+Week|सप्ताह|हफ्ता|અઠવાડિયું|ସପ୍ତାହ|
+Month|महीना||મહિનો|ମାସ|
+Year|साल|वर्ष|વર્ષ|ବର୍ଷ|
+Time|समय|टाइम|સમય|ସମୟ|
+Monday|सोमवार||સોમવાર|ସୋମବାର|
+Tuesday|मंगलवार||મંગળવાર|ମଙ୍ଗଳବାର|
+Wednesday|बुधवार||બુધવાર|ବୁଧବାର|
+Thursday|गुरुवार|बृहस्पतिवार|ગુરુવાર|ଗୁରୁବାର|
+Friday|शुक्रवार||શુક્રવાર|ଶୁକ୍ରବାର|
+Saturday|शनिवार||શનિવાર|ଶନିବାର|
+Sunday|रविवार||રવિવાર|ରବିବାର|`,
+'Colours': `Red|लाल||લાલ|ନାଲି|
+Blue|नीला||વાદળી|ନୀଳ|
+Green|हरा||લીલો|ସବୁଜ|
+Yellow|पीला||પીળો|ହଳଦିଆ|
+White|सफ़ेद|सफेद|સફેદ|ଧଳା|
+Black|काला||કાળો|କଳା|
+Orange|नारंगी||નારંગી|କମଳା|
+Pink|गुलाबी||ગુલાબી|ଗୋଲାପୀ|
+Brown|भूरा||ભૂરો|ବାଦାମୀ|`,
+'School & work': `Teacher|शिक्षक|टीचर,अध्यापक|શિક્ષક|ଶିକ୍ଷକ|
+Student|छात्र|विद्यार्थी|વિદ્યાર્થી|ଛାତ୍ର|
+Book|किताब|पुस्तक|પુસ્તક|ବହି|
+Pen|कलम|पेन|પેન/કલમ|କଲମ|
+Paper|कागज़|कागज|કાગળ|କାଗଜ|
+Class|कक्षा|क्लास|વર્ગ|ଶ୍ରେଣୀ|
+Exam|परीक्षा|एग्जाम|પરીક્ષા|ପରୀକ୍ଷା|
+Computer|कंप्यूटर||કમ્પ્યુટર|କମ୍ପ୍ୟୁଟର|
+Phone|फ़ोन|फोन,मोबाइल|ફોન|ଫୋନ୍|
+Office|दफ़्तर|ऑफिस,दफ्तर|ઓફિસ|କାର୍ଯ୍ୟାଳୟ|
+Sign language|सांकेतिक भाषा|इशारों की भाषा|સાંકેતિક ભાષા|ସାଙ୍କେତିକ ଭାଷା|
+Hindi|हिंदी||હિન્દી|ହିନ୍ଦୀ|
+English|अंग्रेज़ी|अंग्रेजी|અંગ્રેજી|ଇଂରାଜୀ|`,
+'Places, food & things': `City|शहर||શહેર|ସହର|
+Village|गाँव|गांव|ગામ|ଗାଁ|
+Road|सड़क||રસ્તો|ରାସ୍ତା|
+Market|बाज़ार|बाजार|બજાર|ବଜାର|
+Train|रेल|ट्रेन|ટ્રેન|ଟ୍ରେନ୍|
+Bus|बस||બસ|ବସ୍|
+Car|गाड़ी|कार|ગાડી/કાર|ଗାଡ଼ି|
+Shop|दुकान||દુકાન|ଦୋକାନ|
+Bank|बैंक||બેંક|ବ୍ୟାଙ୍କ|
+Temple|मंदिर||મંદિર|ମନ୍ଦିର|
+Tea|चाय||ચા|ଚା'|
+Milk|दूध||દૂધ|ଦୁଧ|
+Rice|चावल||ચોખા/ભાત|ଭାତ|चाउर
+Bread|रोटी||રોટલી|ରୁଟି|
+Fruit|फल||ફળ|ଫଳ|
+Vegetable|सब्ज़ी|सब्जी|શાકભાજી|ପନିପରିବା|
+India|भारत|इंडिया|ભારત|ଭାରତ|`
+};
+const VOCAB = [];
+[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].forEach((c, i) =>
+  VOCAB.push({ id: 'letter_' + c.toLowerCase(), en: c, hi: LETTER_HI[i], alts: [], tr: {}, all: [c, LETTER_HI[i]], type: 'static', cat: 'Alphabet (A–Z)', spell: true }));
+NUM_HI.forEach((n, i) =>
+  VOCAB.push({ id: 'num_' + i, en: String(i), hi: n, alts: [], tr: { gu: NUM_GU[i], or: NUM_OR[i], awa: NUM_AWA[i] },
+    all: [String(i), n, NUM_GU[i], NUM_OR[i], NUM_AWA[i]], type: 'static', cat: 'Numbers (0–9)' }));
+for (const [cat, txt] of Object.entries(WORDS)){
+  txt.split('\n').forEach(line => {
+    const [en, hi, alt, gu, orr, awa] = line.split('|');
+    const tr = {}, all = [en, hi];
+    const addv = (k, s) => { if (!s) return; const vs = s.split('/').map(x => x.trim()).filter(Boolean); if (vs.length){ tr[k] = vs[0]; all.push(...vs); } };
+    addv('gu', gu); addv('or', orr); addv('awa', awa);
+    const alts = alt ? alt.split(',') : []; all.push(...alts);
+    VOCAB.push({ id: slug(en), en, hi, alts, tr, all, type: 'motion', cat });
+  });
+}
+const VBY = Object.fromEntries(VOCAB.map(v => [v.id, v]));
+const CATS = [...new Set(VOCAB.map(v => v.cat))];
+const STOP = new Set([
+  'है','हैं','था','थे','का','की','के','को','से','में','पर','ने','मैंने','हूँ','रहा','रही','रहे',           // Hindi
+  'છે','છું','છો','ને','નો','ની','નું','થી','માં','પર','અને',                                     // Gujarati
+  'ଅଛି','ଅଟେ','ଓ','ର','କୁ','ରେ','ଏବଂ','ହେଉଛି','ଥିଲା',                                            // Odia
+  'the','a','an','is','am','are','to','of','and','do','does','it']);
+const gestureOf = v => db.gestures.find(g => g.vid === v.id) || null;
+const isReady = g => !!g && (g.type === 'motion' ? g.samples.length >= 3 : g.samples.length >= 15);
+function itemFromG(g){
+  const v = g.vid ? VBY[g.vid] : null;
+  return { id: g.vid || g.id, en: g.en || g.name, hi: g.hi || '', tr: (v && v.tr) || g.tr || {}, label: g.name };
+}
+function catalog(){
+  const list = [];
+  db.gestures.filter(g => !g.vid).forEach(g => list.push({ ...itemFromG(g), alts: [g.name],
+    all: [g.name, g.en, g.hi, ...Object.values(g.tr || {})].filter(Boolean), type: g.type, cat: 'Custom', g }));
+  VOCAB.forEach(v => list.push({ ...v, g: gestureOf(v) }));
+  return list;
+}
+const packWords = id => Object.values(db.packs || {}).map(p => p.words && p.words[id]).filter(Boolean);
+const refYT = w => 'https://www.youtube.com/results?search_query=' + encodeURIComponent('Indian Sign Language ISL sign for ' + w);
+const refPortal = w => 'https://www.google.com/search?q=' + encodeURIComponent('site:indiansignlanguage.org ' + w);
+
+/* ===================== SPEECH OUT (multi-language, better audio) ===================== */
+// Speech languages. Awadhi has no voice of its own in any browser/OS, so the Hindi voice reads Awadhi text.
+const SL = {
+  hi:  { name: 'हिन्दी (Hindi)',        bcp: 'hi-IN', voiceKey: 'hi' },
+  en:  { name: 'English (India)',      bcp: 'en-IN', voiceKey: 'en' },
+  gu:  { name: 'ગુજરાતી (Gujarati)',     bcp: 'gu-IN', voiceKey: 'gu' },
+  or:  { name: 'ଓଡ଼ିଆ (Odia)',           bcp: 'or-IN', voiceKey: 'or' },
+  awa: { name: 'अवधी (Awadhi)',        bcp: 'hi-IN', voiceKey: 'hi' }
+};
+const SAMPLE = {
+  hi: 'नमस्ते, मैं साइनवाणी हूँ। आपकी आवाज़ अब साफ़ सुनाई दे रही है।',
+  en: 'Hello, this is SignVaani. Is my voice clear now?',
+  gu: 'નમસ્તે, હું સાઇનવાણી છું. શું મારો અવાજ સ્પષ્ટ સંભળાય છે?',
+  or: 'ନମସ୍କାର, ମୁଁ ସାଇନ୍‌ବାଣୀ। ମୋ ସ୍ୱର ସ୍ପଷ୍ଟ ଶୁଭୁଛି କି?',
+  awa: 'राम राम, हम साइनवाणी हन। हमार अवाज़ साफ़ सुनात बा?'
+};
+function allLangs(){
+  const o = { ...SL };
+  for (const [c, p] of Object.entries(db.packs || {})) if (!o[c]) o[c] = { name: p.name || c, bcp: p.bcp || 'en-IN', voiceKey: c };
+  return o;
+}
+const langInfo = k => allLangs()[k] || SL.hi;
+
+let voices = [];
+const langKey = l => (l || '').toLowerCase().replace('_', '-');
+function voiceScore(v){
+  const n = v.name.toLowerCase(); let s = 0;
+  if (/natural|neural/.test(n)) s += 50;
+  if (/online/.test(n)) s += 25;
+  if (/google/.test(n)) s += 20;
+  if (/premium|enhanced|wavenet/.test(n)) s += 20;
+  if (/microsoft/.test(n)) s += 5;
+  if (v.localService === false) s += 5;
+  if (/espeak|compact/.test(n)) s -= 40;
+  return s;
+}
+function voicesForBcp(bcp){
+  const p = langKey(bcp).slice(0, 2);
+  return voices.filter(v => langKey(v.lang).startsWith(p)).sort((a, b) => voiceScore(b) - voiceScore(a));
+}
+const hasVoice = k => !voices.length || voicesForBcp(langInfo(k).bcp).length > 0;
+function pickVoice(k){
+  const info = langInfo(k), want = db.settings.voices && db.settings.voices[info.voiceKey];
+  if (want){ const v = voices.find(x => x.name === want); if (v) return v; }
+  const all = voicesForBcp(info.bcp); if (!all.length) return null;
+  const exact = all.filter(v => langKey(v.lang) === langKey(info.bcp)), e0 = exact[0], a0 = all[0];
+  return (e0 && voiceScore(e0) >= voiceScore(a0) - 20) ? e0 : a0;
+}
+function fillVoiceSelect(){
+  const sel = $('#sVoice'); if (!sel) return;
+  const info = langInfo(db.settings.speech);
+  sel.replaceChildren(h('option', { value: '' }, 'Auto (best voice)'));
+  voicesForBcp(info.bcp).forEach(v => sel.append(h('option', { value: v.name },
+    tn(v.name + ' (' + v.lang + ')' + (v.localService === false ? ' • ' + T('online') : '')))));
+  sel.value = (db.settings.voices && db.settings.voices[info.voiceKey]) || '';
+}
+function updateVoiceInfo(){
+  const box = $('#voiceInfo'), note = $('#langNote'); if (!box) return;
+  const k = db.settings.speech, name = langInfo(k).name;
+  if (!('speechSynthesis' in window)){ box.textContent = T('Text-to-speech is not available in this browser.'); box.classList.remove('hidden'); }
+  else if (voices.length && !hasVoice(k)){
+    box.textContent = T('No {lang} voice was found on this device, so speech falls back to Hindi/English. Install a voice using the tips below.', { lang: name });
+    box.classList.remove('hidden');
+  } else box.classList.add('hidden');
+  if (k === 'awa'){
+    note.textContent = T('Awadhi has no dedicated voice — the Hindi voice reads Awadhi text. Some words are the same as Hindi. Please verify wording with a native speaker.');
+    note.classList.remove('hidden');
+  } else note.classList.add('hidden');
+}
+function loadVoices(){ voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; fillVoiceSelect(); updateVoiceInfo(); }
+if ('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); setTimeout(loadVoices, 800); }
+function unlockTTS(){ if ('speechSynthesis' in window){ try{ speechSynthesis.speak(new SpeechSynthesisUtterance('')); }catch(e){} } }
+function chunk(t){
+  if (t.length <= 180) return [t];
+  const out = []; let cur = '';
+  for (const w of t.split(' ')){ if ((cur + ' ' + w).length > 180){ out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }
+  if (cur) out.push(cur); return out;
+}
+// runs = [{t, k}] (k = language key). Consecutive runs in the same language become ONE utterance (smooth prosody).
+function speakRuns(runs, cancel = false){
+  if (!('speechSynthesis' in window)) return;
+  const merged = [];
+  for (const r of runs){ if (!r.t) continue; const last = merged[merged.length - 1]; if (last && last.k === r.k) last.t += ' ' + r.t; else merged.push({ t: r.t, k: r.k }); }
+  const go = () => {
+    for (const r of merged){
+      let t = r.t.trim(); if (/\s/.test(t) && !/[.!?।]$/.test(t)) t += '.';
+      const v = pickVoice(r.k);
+      for (const c of chunk(t)){
+        const u = new SpeechSynthesisUtterance(c);
+        u.lang = v ? v.lang : langInfo(r.k).bcp; if (v) u.voice = v;
+        u.rate = db.settings.rate; u.pitch = db.settings.pitch; u.volume = db.settings.volume;
+        speechSynthesis.speak(u);
+      }
+    }
+  };
+  if (cancel){ speechSynthesis.cancel(); setTimeout(go, 80); } else go();
+}
+// text of an item in language k (language packs override built-in words)
+function textIn(it, k){
+  const pk = Object.prototype.hasOwnProperty.call(db.packs || {}, k) && db.packs[k].words && db.packs[k].words[it.id];
+  if (pk) return pk;
+  if (k === 'en') return it.en || '';
+  if (k === 'hi') return it.hi || '';
+  const t = it.tr && it.tr[k]; if (t) return t;
+  return k === 'awa' ? (it.hi || '') : '';
+}
+function detectLang(t){
+  if (/[\u0A80-\u0AFF]/.test(t)) return 'gu';
+  if (/[\u0B00-\u0B7F]/.test(t)) return 'or';
+  if (isDev(t)) return db.settings.speech === 'awa' ? 'awa' : 'hi';
+  if (!/[A-Za-z]/.test(t) && db.packs && db.packs[db.settings.speech]) return db.settings.speech;
+  return 'en';
+}
+// what to say for an item: chosen language first, then fall back (Hindi, English) if the text or the voice is missing
+function itemSpeech(it, k = db.settings.speech){
+  const chain = k === 'awa' ? ['awa', 'hi', 'en'] : k === 'hi' ? ['hi', 'en'] : k === 'en' ? ['en', 'hi'] : [k, 'hi', 'en'];
+  for (const c of chain){ const t = textIn(it, c); if (t && hasVoice(c)) return { t, k: c }; }
+  const t = it.en || it.hi || Object.values(it.tr || {})[0] || it.label || '';
+  return { t, k: detectLang(t) };
+}
+const speakItems = (items, cancel = false) => speakRuns(items.map(it => itemSpeech(it)), cancel);
+function speakText(t, cancel = true){
+  const k = detectLang(t);
+  if (!hasVoice(k)) toast(T('No {lang} voice on this device. See the tips in Settings to install one.', { lang: langInfo(k).name }), 4000);
+  speakRuns([{ t, k }], cancel);
+}
+
+/* ===================== SENTENCE ===================== */
+let sentence = [], spoken = 0, phraseT = 0;
+// display name: main label in the UI language, plus the word in the chosen voice language when different
+const pri = e => db.settings.ui === 'hi' ? (e.hi || e.en || '') : (e.en || e.hi || '');
+function sec(e){ const t = textIn(e, db.settings.speech); return t && t !== pri(e) ? t : ''; }
+const dispName = e => { const s = sec(e); return pri(e) + (s ? ' · ' + s : ''); };
+function renderSentence(){
+  const box = $('#sentence'); box.replaceChildren();
+  if (!sentence.length){ box.append(h('span', { class: 'empty' }, 'Words will appear here as you sign…')); return; }
+  sentence.forEach((it, i) => {
+    box.append(h('button', { class: 'chip', title: T('Tap to remove'), onclick: () => {
+      sentence.splice(i, 1); spoken = Math.min(spoken, sentence.length); renderSentence();
+    } }, tn(itemSpeech(it).t), h('small', {}, '✕')));
+  });
+}
+function flushPhrase(){
+  const items = sentence.slice(spoken);
+  if (items.length) speakItems(items);
+  spoken = sentence.length;
+}
+function commit(it){
+  sentence.push({ id: it.id, en: it.en || '', hi: it.hi || '', tr: it.tr || {}, label: it.label || '' });
+  renderSentence();
+  if (db.settings.vibrate && navigator.vibrate) navigator.vibrate(40);
+  const m = db.settings.speakMode;
+  if (m === 'word'){ speakItems([sentence[sentence.length - 1]]); spoken = sentence.length; }
+  else if (m === 'phrase'){ clearTimeout(phraseT); phraseT = setTimeout(flushPhrase, 1300); }
+}
+const sentenceText = () => sentence.map(it => itemSpeech(it).t).join(' ');
+function speakSentence(){
+  if (!sentence.length){ toast('The sentence is empty'); return; }
+  clearTimeout(phraseT);
+  speakItems(sentence, true); spoken = sentence.length; pushHistory(sentenceText());
+}
+function pushHistory(text){
+  if (!text) return;
+  db.history = [text, ...db.history.filter(x => x !== text)].slice(0, 12); save(); renderHistory();
+}
+function renderHistory(){
+  const box = $('#history'); box.replaceChildren();
+  if (!db.history.length){ box.append(h('span', { style: 'color:var(--mut);font-size:.9rem' }, 'Nothing yet.')); return; }
+  db.history.forEach(t => box.append(h('div', { class: 'item' }, h('span', { class: 't' }, tn(t)),
+    h('button', { class: 'btn small', onclick: () => speakText(t) }, 'Speak again'))));
+}
+function renderQuick(){
+  const box = $('#quick'); box.replaceChildren();
+  [...QUICK, ...db.phrases].forEach(p => box.append(h('button', { class: 'btn small', onclick: () => speakItems([p], true) }, tn(itemSpeech(p).t))));
+}
+
+/* ===================== CAMERA + MODEL ===================== */
+const video = $('#video'), overlay = $('#overlay'), ctx = overlay.getContext('2d'), du = new DrawingUtils(ctx);
+const CONN = GestureRecognizer.HAND_CONNECTIONS;
+const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL = 'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task';
+let recognizer = null, stream = null, facing = 'user', running = false, raf = 0, lastVT = -1;
+
+function setStatus(t, cls = ''){ const s = $('#status'); s.textContent = T(t); s.className = 'pill ' + cls; }
+async function initModel(){
+  const fileset = await FilesetResolver.forVisionTasks(WASM);
+  const mk = delegate => GestureRecognizer.createFromOptions(fileset, {
+    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numHands: 2,
+    minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
+  try{ recognizer = await mk('GPU'); } catch(e){ recognizer = await mk('CPU'); }
+}
+async function openStream(){
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  video.srcObject = stream; await video.play();
+  if (!video.videoWidth) await new Promise(r => video.onloadedmetadata = r);
+  overlay.width = video.videoWidth; overlay.height = video.videoHeight;
+  $('#stage').style.aspectRatio = video.videoWidth + '/' + video.videoHeight;
+  $('#stage').classList.toggle('mirror', facing === 'user');
+  lastVT = -1;
+}
+async function startCamera(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast('Open this page over HTTPS or localhost to use the camera.', 5000); setStatus('HTTPS needed', 'err'); return;
+  }
+  try{
+    $('#btnStart').disabled = true; setStatus('Loading model…');
+    if (!recognizer) await initModel();
+    await openStream();
+    running = true; $('#placeholder').classList.add('hidden'); unlockTTS();
+    setStatus('Live', 'live'); $('#btnStart').textContent = T('Stop camera');
+    loop();
+  }catch(e){
+    console.error(e); setStatus('Error', 'err');
+    toast(e && e.name === 'NotAllowedError' ? T('Please allow camera permission.') : T('Could not start camera/model: {m}', { m: e.message || e }), 5000);
+  }finally{ $('#btnStart').disabled = false; }
+}
+function stopCamera(){
+  running = false; cancelAnimationFrame(raf);
+  if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null;
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  $('#placeholder').classList.remove('hidden'); setStatus('Camera is off'); $('#btnStart').textContent = T('Start camera');
+  capture = null; $('#countdown').classList.add('hidden'); hud('—', '', 0);
+}
+$('#btnStart').onclick = () => running ? stopCamera() : startCamera();
+$('#btnFlip').onclick = async () => {
+  facing = facing === 'user' ? 'environment' : 'user';
+  if (running){ try{ await openStream(); }catch(e){ toast('Could not flip the camera'); } }
+};
+function loop(){
+  if (!running) return;
+  if (video.readyState >= 2 && video.currentTime !== lastVT){
+    lastVT = video.currentTime;
+    const now = performance.now();
+    try{ onResult(recognizer.recognizeForVideo(video, now), now); }catch(e){ console.error(e); }
+  }
+  raf = requestAnimationFrame(loop);
+}
+function draw(hands){
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  if (!db.settings.skeleton) return;
+  for (const lm of hands){
+    du.drawConnectors(lm, CONN, { color: '#f2a900', lineWidth: 3 });
+    du.drawLandmarks(lm, { color: '#ffffff', lineWidth: 1, radius: 3 });
+  }
+}
+function hud(label, sub, p){ $('#hudLabel').textContent = label; $('#hudSub').textContent = sub || ''; $('#hudBar').style.width = Math.round(p * 100) + '%'; }
+
+/* ===================== RECOGNITION ===================== */
+let tab = 'bolo', mode = 'static', capture = null;
+let hold = { key: null, since: 0, fired: false }, nullSince = 0, lastHandT = 0;
+
+function onResult(res, now){
+  const hands = res.landmarks || [];
+  const aspect = video.videoWidth / video.videoHeight;
+  draw(hands);
+  const fd = { n: hands.length, feat: null, cx: 0, cy: 0, sc: 1, builtin: null };
+  if (hands.length){
+    fd.feat = frameFeatures(hands, aspect); Object.assign(fd, frameMeta(hands, aspect)); lastHandT = now;
+    if (hands.length === 1 && res.gestures && res.gestures[0] && res.gestures[0][0]){
+      const c = res.gestures[0][0]; if (c.categoryName !== 'None' && c.score > 0.6) fd.builtin = { name: c.categoryName, score: c.score };
+    }
+  }
+  if (capture){ capture.onFrame(fd, now); return; }
+  if (tab === 'seekho' && prac.on){ pracStep(fd, now); return; }
+  const pred = predictStatic(fd);
+  if (mode === 'static') stepHold(pred, fd, now);
+  else hud(fd.n ? T('Hand detected') : T('No hand seen'), T('Motion mode: press “Record sign”'), 0);
+  if (db.settings.speakMode === 'sentence' && sentence.length > spoken && !fd.n && now - lastHandT > 2500) speakSentence();
+}
+function predictStatic(fd){
+  if (!fd.n) return null;
+  const custom = db.gestures.filter(g => g.type === 'static');
+  const dec = decide(rank(fd.feat, custom), db.settings.thr);
+  if (dec) return { ...itemFromG(dec.g), key: 'c:' + dec.g.id, conf: dec.conf };
+  if (fd.builtin){
+    const b = db.builtin[fd.builtin.name];
+    if (b && b.on) return { id: 'builtin_' + fd.builtin.name, en: b.en, hi: b.hi, tr: b.tr || {}, label: b.en, key: 'b:' + fd.builtin.name, conf: fd.builtin.score };
+  }
+  return null;
+}
+function stepHold(pred, fd, now){
+  const canCommit = tab === 'bolo';
+  if (!pred){
+    if (!nullSince) nullSince = now;
+    if (now - nullSince > 350) hold = { key: null, since: 0, fired: false };
+    hud(fd.n ? T('Sign not recognised') : T('No hand seen'), fd.n ? T('If the sign is not recorded, record it in the Library first') : '', 0);
+    return;
+  }
+  nullSince = 0;
+  if (pred.key !== hold.key) hold = { key: pred.key, since: now, fired: false };
+  const p = Math.min(1, (now - hold.since) / db.settings.holdMs);
+  hud(dispName(pred), T('{p}% match', { p: Math.round(pred.conf * 100) }) + (canCommit ? '' : T(' (test mode)')), hold.fired ? 1 : p);
+  if (p >= 1 && !hold.fired && canCommit){ hold.fired = true; commit(pred); }
+}
+
+/* ===================== CAPTURE (recording + motion) ===================== */
+function runCapture({ countdownMs, durationMs, kind, title, onDone }){
+  if (!running){ toast('Start the camera first'); return; }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const cd = $('#countdown'); let t0 = 0, last = 0; const frames = [];
+  capture = { onFrame(fd, now){
+    if (!t0) t0 = now;
+    const el = now - t0;
+    if (el < countdownMs){
+      cd.classList.remove('hidden', 'rec'); cd.textContent = Math.ceil((countdownMs - el) / 1000);
+      hud(title, T('Get ready…'), 0); return;
+    }
+    const e2 = el - countdownMs;
+    if (e2 < durationMs){
+      cd.classList.remove('hidden'); cd.classList.add('rec'); cd.textContent = '●';
+      if (kind === 'static'){ if (fd.feat && now - last >= 70){ frames.push(fd.feat); last = now; } }
+      else frames.push({ feat: fd.feat, cx: fd.cx, cy: fd.cy, sc: fd.sc });
+      hud(T('Recording…'), T('{n} frames', { n: frames.length }), e2 / durationMs); return;
+    }
+    cd.classList.add('hidden'); capture = null; hud('—', '', 0); onDone(frames);
+  } };
+}
+let lastMotion = false;
+function recognizeMotion(vec){
+  const cands = db.gestures.filter(g => g.type === 'motion');
+  const ranked = rank(vec, cands);
+  const dec = decide(ranked, db.settings.mthr);
+  const box = $('#candBox'); box.replaceChildren();
+  lastMotion = false;
+  if (!ranked.length){ toast('Record a motion sign in the Library first.', 4000); return; }
+  if (dec){
+    commit(itemFromG(dec.g)); lastMotion = true;
+    toast(T('Recognised: {n} ({p}%)', { n: dispName(itemFromG(dec.g)), p: Math.round(dec.conf * 100) }));
+  } else toast('No sure match — pick one below', 3500);
+  box.append(h('span', { class: 'hint' }, dec ? 'Wrong? Pick the right one:' : 'Closest matches:'));
+  ranked.slice(0, 3).forEach(r => box.append(h('button', { class: 'chip alt', onclick: () => {
+    if (lastMotion){ sentence.pop(); lastMotion = false; }
+    commit(itemFromG(r.g));
+  } }, tn(pri(itemFromG(r.g))), h('small', {}, Math.round(Math.max(0, 1 - r.d / (db.settings.mthr * 1.6)) * 100) + '%'))));
+}
+$('#btnMotion').onclick = () => runCapture({ countdownMs: 3000, durationMs: 2200, kind: 'seq', title: 'Get ready…',
+  onDone: frames => { const v = seqFeature(frames); if (!v) toast('Hand was not fully visible. Try again.'); else recognizeMotion(v); } });
+
+/* ===================== LIBRARY (vocabulary + custom signs) ===================== */
+const openCats = new Set([CATS[0]]);
+const catName = c => db.settings.ui === 'hi' ? (CAT_HI[c] || c) : c;
+function recordFor(g){
+  const done = () => { save(); renderVocab(); renderGestures(); };
+  const nm = pri(itemFromG(g));
+  if (g.type === 'static'){
+    runCapture({ countdownMs: 3000, durationMs: 1600, kind: 'static', title: T('{n} – get the pose ready', { n: nm }), onDone: fr => {
+      if (fr.length < 5){ toast('Hand was not fully visible. Try again.'); return; }
+      g.samples.push(...fr.map(r3)); if (g.samples.length > 240) g.samples = g.samples.slice(-240);
+      done(); toast(T('{n} samples added', { n: fr.length }));
+    } });
+  } else {
+    runCapture({ countdownMs: 3000, durationMs: 2200, kind: 'seq', title: T('{n} – get ready to sign', { n: nm }), onDone: fr => {
+      const v = seqFeature(fr); if (!v){ toast('Hand was not fully visible. Try again.'); return; }
+      g.samples.push(r3(v)); if (g.samples.length > 15) g.samples = g.samples.slice(-15);
+      done(); toast(T('Recording added ({n})', { n: g.samples.length }));
+    } });
+  }
+}
+function recordVocab(v, typeVal){
+  let g = gestureOf(v);
+  if (!g){ g = { id: 'v_' + v.id, vid: v.id, name: v.en, en: v.en, hi: v.hi, type: typeVal, cat: v.cat, samples: [] }; db.gestures.push(g); }
+  else if (!g.samples.length) g.type = typeVal;
+  recordFor(g);
+}
+function renderVocab(){
+  const q = normTok($('#vSearch').value || ''), box = $('#vList'); box.replaceChildren();
+  const total = VOCAB.length, ready = VOCAB.filter(v => isReady(gestureOf(v))).length;
+  $('#vProg').style.width = Math.round(ready / total * 100) + '%';
+  $('#vProgText').textContent = T('{a} / {b} signs ready (recorded)', { a: ready, b: total });
+  for (const cat of CATS){
+    const items = VOCAB.filter(v => v.cat === cat && (!q || v.all.some(k => normTok(k).includes(q))));
+    if (!items.length) continue;
+    const rc = VOCAB.filter(v => v.cat === cat && isReady(gestureOf(v))).length, tc = VOCAB.filter(v => v.cat === cat).length;
+    const d = h('details', {}, h('summary', {}, tn(catName(cat) + ' (' + rc + '/' + tc + ')')));
+    d.open = q ? true : openCats.has(cat);
+    d.addEventListener('toggle', () => { if (!q){ if (d.open) openCats.add(cat); else openCats.delete(cat); } });
+    items.forEach(v => {
+      const g = gestureOf(v), n = g ? g.samples.length : 0;
+      const sel = h('select', { 'aria-label': 'type' }, h('option', { value: 'static' }, 'static'), h('option', { value: 'motion' }, 'motion'));
+      sel.value = g ? g.type : v.type; sel.disabled = n > 0;
+      d.append(h('div', { class: 'vrow' },
+        h('div', { class: 'vname' }, h('b', {}, tn(pri(v))), ' ', h('span', {}, tn(sec(v)))),
+        h('div', { class: 'vbtns' },
+          n ? h('span', { class: 'tag' + (isReady(g) ? ' ok' : '') }, tn(isReady(g) ? '✓ ' + n : T('{n} (few)', { n }))) : null,
+          sel,
+          h('button', { class: 'btn small primary', onclick: () => recordVocab(v, sel.value) }, n ? 'Record more' : 'Record'),
+          n ? h('button', { class: 'btn small', onclick: () => showEntries([{ e: { ...v, g } }]) }, 'View') : null,
+          n ? h('button', { class: 'btn small danger', onclick: () => { if (confirm(T('Clear the samples of {w}?', { w: pri(v) }))){ g.samples = []; save(); renderVocab(); } } }, 'Clear') : null,
+          h('a', { class: 'lnk', href: refYT(v.en), target: '_blank', rel: 'noopener' }, 'Video'))));
+    });
+    box.append(d);
+  }
+  if (!box.children.length) box.append(h('span', { class: 'hint' }, 'No matches. Add a custom sign below.'));
+}
+function renderGestures(){
+  const box = $('#gList'); box.replaceChildren();
+  const mine = db.gestures.filter(g => !g.vid);
+  if (!mine.length){ box.append(h('span', { style: 'color:var(--mut);font-size:.9rem' }, 'No custom signs yet.')); return; }
+  mine.forEach(g => {
+    const e = { ...itemFromG(g), type: g.type, g };
+    box.append(h('div', { class: 'item' },
+      h('div', {}, h('span', { class: 't' }, tn(g.name)), h('span', { class: 'tag' + (g.type === 'motion' ? ' motion' : '') }, g.type),
+        h('div', { class: 'm' }, tn(T(g.type === 'motion' ? '{n} recordings' : '{n} samples', { n: g.samples.length }) + (g.hi ? ' · ' + g.hi : '') + (g.en ? ' · ' + g.en : '')))),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn small primary', onclick: () => recordFor(g) }, 'Record'),
+        g.samples.length ? h('button', { class: 'btn small', onclick: () => showEntries([{ e }]) }, 'View') : null,
+        h('button', { class: 'btn small', onclick: () => { g.samples = []; save(); renderGestures(); } }, 'Clear samples'),
+        h('button', { class: 'btn small danger', onclick: () => { if (confirm(T('Delete {w}?', { w: g.name }))){ db.gestures = db.gestures.filter(x => x !== g); save(); renderGestures(); } } }, 'Delete'))));
+  });
+}
+$('#vSearch').oninput = renderVocab;
+$('#btnAddG').onclick = () => {
+  const name = $('#gName').value.trim(); if (!name){ toast('Enter a sign name'); return; }
+  if (db.gestures.some(g => g.name.toLowerCase() === name.toLowerCase())){ toast('A sign with this name already exists'); return; }
+  const tr = {}; for (const [k, id] of [['gu', '#gGu'], ['or', '#gOr'], ['awa', '#gAwa']]){ const v = $(id).value.trim(); if (v) tr[k] = v; }
+  db.gestures.push({ id: uid(), name, en: $('#gEn').value.trim() || name, hi: $('#gHi').value.trim(), tr, type: $('#gType').value, samples: [] });
+  save(); ['#gName', '#gEn', '#gHi', '#gGu', '#gOr', '#gAwa'].forEach(s => $(s).value = ''); renderGestures(); toast('Sign created — now press “Record”');
+};
+function renderBuiltin(){
+  const box = $('#bList'); box.replaceChildren();
+  Object.entries(db.builtin).forEach(([k, b]) => {
+    const en = h('input', { type: 'text', value: b.en }), hi = h('input', { type: 'text', value: b.hi });
+    en.oninput = () => { b.en = en.value; save(); }; hi.oninput = () => { b.hi = hi.value; save(); };
+    const on = h('input', { type: 'checkbox' }); on.checked = !!b.on; on.onchange = () => { b.on = on.checked; save(); };
+    box.append(h('div', { class: 'item', style: 'display:block' },
+      h('label', { class: 'row', style: 'font-weight:700' }, on, k.replace('_', ' ')),
+      h('div', { class: 'grid2', style: 'margin-top:6px' }, en, hi)));
+  });
+}
+function download(name, obj){
+  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove();
+}
+$('#btnExport').onclick = async () => { await flushSave(); download('signvaani-data.json', db); };
+$('#btnImport').onclick = () => $('#fileImport').click();
+$('#fileImport').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    const j = JSON.parse(await f.text());
+    if (!j || j.v !== 1 || !Array.isArray(j.gestures)) throw new Error('bad file');
+    j.gestures.forEach(g => { const i = db.gestures.findIndex(x => x.id === g.id); if (i >= 0) db.gestures[i] = g; else db.gestures.push(g); });
+    if (j.builtin) Object.assign(db.builtin, j.builtin);
+    if (j.packs) Object.assign(db.packs, j.packs);
+    if (Array.isArray(j.phrases)) db.phrases = [...db.phrases, ...j.phrases.filter(p => !db.phrases.some(q => q.en === p.en && q.hi === p.hi && JSON.stringify(q.tr) === JSON.stringify(p.tr)))];
+    save(); renderAll(); fillLangSelects(); toast('Import complete');
+  }catch(err){ toast('Invalid file'); }
+  e.target.value = '';
+};
+
+/* ===================== LEARN (speak/type -> sign animation, practice) ===================== */
+const demo = $('#demo'), dctx = demo.getContext('2d');
+let anim = null, demoRaf = 0, seq = { items: [], i: -1, timer: 0 }, speedIdx = 1;
+const SPEEDS = [0.5, 1, 1.5];
+const repCache = new Map();
+function repOf(g){
+  const c = repCache.get(g.id);
+  if (c && c.n === g.samples.length) return c.v;
+  const v = medoid(g.samples); repCache.set(g.id, { n: g.samples.length, v }); return v;
+}
+function buildAnim(g){
+  const vec = repOf(g), motion = g.type === 'motion' && vec.length > 200;
+  let frames;
+  if (!motion) frames = [decodeFrame(vec, 0, 0)];
+  else {
+    const n = vec.length / 130, raw = [];
+    for (let i = 0; i < n; i++) raw.push(vec.slice(i * 130, i * 130 + 130));
+    frames = resample(raw, 48).map(v => decodeFrame(v, v[128], v[129]));
+  }
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const f of frames) for (const hd of f) for (const p of hd.pts){ if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y; }
+  const w = Math.max(x1 - x0, 1.5), hh = Math.max(y1 - y0, 1.5);
+  const sc = Math.min(demo.width * 0.7 / w, demo.height * 0.7 / hh, 150);
+  return { frames, motion, dur: 2200, t0: performance.now(), speed: SPEEDS[speedIdx], b: { mx: (x0 + x1) / 2, my: (y0 + y1) / 2, sc } };
+}
+function drawMsg(msg){
+  dctx.fillStyle = '#0d1a22'; dctx.fillRect(0, 0, demo.width, demo.height);
+  dctx.fillStyle = '#b8c7d1'; dctx.font = '20px system-ui,sans-serif'; dctx.textAlign = 'center';
+  const lines = T(msg).split('\n'); lines.forEach((l, i) => dctx.fillText(l, demo.width / 2, demo.height / 2 + (i - (lines.length - 1) / 2) * 28));
+}
+function drawMsgRaw(msg){
+  dctx.fillStyle = '#0d1a22'; dctx.fillRect(0, 0, demo.width, demo.height);
+  dctx.fillStyle = '#b8c7d1'; dctx.font = '20px system-ui,sans-serif'; dctx.textAlign = 'center';
+  msg.split('\n').forEach((l, i, a) => dctx.fillText(l, demo.width / 2, demo.height / 2 + (i - (a.length - 1) / 2) * 28));
+}
+function drawHands(hands, b){
+  const W = demo.width, H = demo.height, mir = db.settings.mirror ? -1 : 1;
+  dctx.fillStyle = '#0d1a22'; dctx.fillRect(0, 0, W, H);
+  const X = x => W / 2 + (x - b.mx) * b.sc * mir, Y = y => H / 2 + (y - b.my) * b.sc;
+  const lw = Math.max(5, b.sc * 0.2);
+  for (const hd of hands){
+    const col = hd.c ? '#f2a900' : '#4fd1c5', P = hd.pts;
+    dctx.beginPath(); [0, 1, 5, 9, 13, 17].forEach((i, k) => k ? dctx.lineTo(X(P[i].x), Y(P[i].y)) : dctx.moveTo(X(P[i].x), Y(P[i].y)));
+    dctx.closePath(); dctx.fillStyle = col + '44'; dctx.fill();
+    dctx.strokeStyle = col; dctx.lineWidth = lw; dctx.lineCap = 'round'; dctx.lineJoin = 'round';
+    for (const c of CONN){ dctx.beginPath(); dctx.moveTo(X(P[c.start].x), Y(P[c.start].y)); dctx.lineTo(X(P[c.end].x), Y(P[c.end].y)); dctx.stroke(); }
+    P.forEach((p, i) => { dctx.beginPath(); dctx.arc(X(p.x), Y(p.y), [4, 8, 12, 16, 20].includes(i) ? lw * 0.75 : lw * 0.5, 0, 7); dctx.fillStyle = '#fff'; dctx.fill(); });
+  }
+}
+function demoTick(now){
+  demoRaf = requestAnimationFrame(demoTick);
+  if (!anim) return;
+  if (!anim.motion){ drawHands(anim.frames[0], anim.b); return; }
+  const cyc = anim.dur + 800, ph = ((now - anim.t0) * anim.speed) % cyc, p = Math.min(1, ph / anim.dur);
+  drawHands(anim.frames[Math.round(p * (anim.frames.length - 1))], anim.b);
+}
+function startDemo(){ if (!demoRaf) demoRaf = requestAnimationFrame(demoTick); }
+function stopDemo(){ cancelAnimationFrame(demoRaf); demoRaf = 0; }
+
+function renderSeqChips(){
+  const box = $('#demoSeq'); box.replaceChildren();
+  if (seq.items.length < 2) return;
+  seq.items.forEach((it, i) => box.append(h('button', { class: 'chip' + (it.e ? (it.e.g && it.e.g.samples.length ? '' : ' alt') : ' miss') + (i === seq.i ? ' cur' : ''),
+    onclick: () => playItem(i, false) }, it.e ? tn(pri(it.e)) : tn('✗ ' + it.miss))));
+}
+function playItem(i, chain){
+  clearTimeout(seq.timer); seq.i = i;
+  const it = seq.items[i]; if (!it) return; renderSeqChips();
+  const e = it.e, g = e && e.g;
+  $('#demoTitle').textContent = e ? dispName(e) : it.miss;
+  const refs = $('#dRefs'); refs.replaceChildren();
+  const w = e ? e.en : it.miss;
+  refs.append(h('a', { class: 'btn small', href: refYT(w), target: '_blank', rel: 'noopener' }, 'Watch video (YouTube)'),
+              h('a', { class: 'btn small', href: refPortal(w), target: '_blank', rel: 'noopener' }, 'ISL Portal'));
+  if (g && g.samples.length){
+    anim = buildAnim(g);
+    $('#demoSub').textContent = T(g.type === 'motion' ? 'Motion sign · built from {n} recordings' : 'Static sign · built from {n} samples', { n: g.samples.length });
+  } else {
+    anim = null;
+    drawMsgRaw(e ? T('This sign has no recording yet.\nRecord it in the Library or watch the video link.') : T('“{w}” — no sign found.\nWatch the video link.', { w: it.miss }));
+    $('#demoSub').textContent = e ? T('No recording yet — see the links below for the real sign.') : T('This word is not in the list.');
+  }
+  if ($('#dSay').checked && e) speakItems([e], true);
+  if (chain && i + 1 < seq.items.length) seq.timer = setTimeout(() => playItem(i + 1, true), (anim && anim.motion ? anim.dur / anim.speed + 900 : 2300));
+}
+function showEntries(items){
+  if (tab !== 'seekho') setTab('seekho');
+  seq.items = items; seq.i = -1;
+  if (!items.length){ anim = null; drawMsg('Nothing found'); $('#demoTitle').textContent = '—'; renderSeqChips(); return; }
+  playItem(0, true);
+}
+function runQuery(q){
+  q = (q || '').trim(); if (!q) return;
+  const cat = catalog(), lookup = buildLookup(cat);
+  const parsed = parseQuery(q, lookup, STOP), out = [];
+  const letters = new Map(cat.filter(e => e.spell).map(e => [e.en.toLowerCase(), e]));
+  const anyLetter = [...letters.values()].some(e => e.g && e.g.samples.length);
+  for (const p of parsed){
+    if (p.e) out.push(p);
+    else if (/^[a-z]{2,12}$/.test(p.miss) && anyLetter){ [...p.miss].forEach(c => out.push({ e: letters.get(c) })); }
+    else out.push(p);
+  }
+  showEntries(out);
+  if (!out.length) toast('No word recognised. Try another word.');
+}
+function buildLookup(cat){
+  const m = new Map();
+  for (const e of cat){ if (e.spell) continue; for (const k of (e.all || [e.en, e.hi])){ const n = normTok(k); if (n && !m.has(n)) m.set(n, e); } }
+  return m;
+}
+$('#lqGo').onclick = () => runQuery($('#lqIn').value);
+$('#lqIn').onkeydown = e => { if (e.key === 'Enter') runQuery($('#lqIn').value); };
+function fillLqCat(){
+  $('#lqCat').replaceChildren(h('option', { value: '' }, 'Pick from a category…'), ...CATS.map(c => h('option', { value: c }, tn(catName(c)))));
+}
+$('#lqCat').onchange = e => {
+  const c = e.target.value, box = $('#lqChips'); box.replaceChildren(); if (!c) return;
+  catalog().filter(x => x.cat === c).forEach(x => box.append(h('button', { class: 'chip' + (x.g && x.g.samples.length ? '' : ' alt'),
+    onclick: () => showEntries([{ e: x }]) }, tn(pri(x)), h('small', {}, tn(sec(x))))));
+};
+$('#dReplay').onclick = () => { if (seq.i >= 0) playItem(seq.i, false); };
+function updateSpeedBtn(){ $('#dSpeed').textContent = T('Speed {x}x', { x: SPEEDS[speedIdx] }); }
+$('#dSpeed').onclick = () => { speedIdx = (speedIdx + 1) % SPEEDS.length; updateSpeedBtn(); if (anim) anim.speed = SPEEDS[speedIdx]; };
+$('#dSpeak').onclick = () => { const it = seq.items[seq.i]; if (it && it.e) speakItems([it.e], true); };
+$('#dMirror').onchange = e => { db.settings.mirror = e.target.checked; save(); };
+
+// speech recognition helpers
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function fillLqLang(){
+  const sel = $('#lqLang'); sel.replaceChildren();
+  Object.entries(allLangs()).forEach(([k, info]) => { if (k !== 'awa') sel.append(h('option', { value: k }, tn(info.name))); });
+  sel.value = db.settings.speech !== 'awa' ? db.settings.speech : 'hi';
+}
+$('#lqMic').onclick = () => {
+  if (!SR){ toast('Voice input is not supported in this browser. Use Chrome on Android.', 4000); return; }
+  const info = langInfo($('#lqLang').value);
+  const r = new SR(); r.lang = info.bcp; r.continuous = false; r.interimResults = false;
+  const b = $('#lqMic'); b.textContent = T('Listening…');
+  r.onresult = ev => { const t = ev.results[0][0].transcript; $('#lqIn').value = t; runQuery(t); };
+  r.onerror = ev => toast(ev.error === 'not-allowed' ? T('Please allow microphone permission') : (ev.error === 'language-not-supported' ? T('Voice input is not available for this language in this browser.') : T('Could not understand the audio')));
+  r.onend = () => { b.textContent = '🎤'; };
+  try{ r.start(); }catch(e){ b.textContent = '🎤'; }
+};
+
+/* practice */
+const prac = { on: false, target: null, ok: 0, tot: 0, since: 0, fired: false };
+const pracPool = () => catalog().filter(e => e.g && e.g.samples.length);
+function pracNext(){
+  if (!prac.on) return;
+  const pool = pracPool(); if (!pool.length){ toast('Record some signs in the Library first'); pracStop(); return; }
+  let e; do { e = pool[Math.floor(Math.random() * pool.length)]; } while (pool.length > 1 && prac.target && e.id === prac.target.id);
+  prac.target = e; prac.since = 0; prac.fired = false;
+  $('#pTry').classList.toggle('hidden', e.g.type !== 'motion');
+  $('#pText').textContent = T('Make this sign: {w}   ({a}/{b})', { w: dispName(e), a: prac.ok, b: prac.tot });
+  showEntries([{ e }]);
+}
+function pracStop(){
+  prac.on = false; prac.target = null; $('#pStart').textContent = T('Start practice'); $('#pTry').classList.add('hidden'); hud('—', '', 0);
+  if (prac.tot) $('#pText').textContent = T('Score: {a} / {b}', { a: prac.ok, b: prac.tot });
+}
+function pracResult(ok, pct){
+  prac.tot++; if (ok){ prac.ok++; toast(T('Great! {p}%', { p: pct })); if (db.settings.vibrate && navigator.vibrate) navigator.vibrate(60); setTimeout(pracNext, 1400); }
+  else toast(T('Match {p}% — watch the demo and try again', { p: pct }), 3200);
+}
+function pracStep(fd, now){
+  const e = prac.target; if (!e || !e.g) return;
+  const word = dispName(e);
+  if (e.g.type === 'motion'){ hud(word, T('Press “Try” below'), 0); return; }
+  if (!fd.n){ hud(word, T('Show your hand'), 0); prac.since = 0; return; }
+  let best = Infinity; for (const s of e.g.samples){ const d = rms(fd.feat, s); if (d < best) best = d; }
+  const thr = db.settings.thr * 1.15, pct = Math.round(Math.max(0, Math.min(1, 1 - best / (thr * 1.6))) * 100);
+  if (best <= thr){
+    if (!prac.since) prac.since = now;
+    const p = Math.min(1, (now - prac.since) / db.settings.holdMs);
+    hud(word + ' ✓', T('{p}% — hold steady', { p: pct }), p);
+    if (p >= 1 && !prac.fired){ prac.fired = true; pracResult(true, pct); }
+  } else { prac.since = 0; hud(word, T('Match {p}% — copy the demo', { p: pct }), 0); }
+}
+$('#pStart').onclick = () => {
+  if (prac.on){ pracStop(); return; }
+  if (!running){ toast('Start the camera first'); return; }
+  prac.on = true; prac.ok = 0; prac.tot = 0; prac.target = null; $('#pStart').textContent = T('Stop practice'); pracNext();
+};
+$('#pSkip').onclick = () => { if (prac.on) pracNext(); };
+$('#pTry').onclick = () => {
+  const e = prac.target; if (!prac.on || !e) return;
+  runCapture({ countdownMs: 2500, durationMs: 2200, kind: 'seq', title: dispName(e), onDone: fr => {
+    const v = seqFeature(fr); if (!v){ toast('Hand was not fully visible. Try again.'); return; }
+    let best = Infinity; for (const s of e.g.samples){ const d = rms(v, s); if (d < best) best = d; }
+    const thr = db.settings.mthr; pracResult(best <= thr, Math.round(Math.max(0, Math.min(1, 1 - best / (thr * 1.6))) * 100));
+  } });
+};
+
+/* ===================== LISTEN (speech -> big text) ===================== */
+let recog = null, listening = false, finalText = '';
+function renderSR(interim = ''){ $('#srText').replaceChildren(tn(finalText), h('span', { class: 'interim' }, tn(interim))); }
+function fillSrLang(){
+  const sel = $('#srLang'); sel.replaceChildren();
+  Object.entries(allLangs()).forEach(([k, info]) => { if (k !== 'awa') sel.append(h('option', { value: k }, tn(info.name))); });
+  sel.value = db.settings.speech !== 'awa' ? db.settings.speech : 'hi';
+}
+$('#btnMic').onclick = () => {
+  if (!SR){ $('#srWarn').classList.remove('hidden'); return; }
+  if (listening){ listening = false; recog && recog.stop(); $('#btnMic').classList.remove('on'); return; }
+  recog = new SR(); recog.lang = langInfo($('#srLang').value).bcp; recog.continuous = true; recog.interimResults = true;
+  recog.onresult = ev => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++){
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) finalText += t + '\n'; else interim += t;
+    }
+    renderSR(interim);
+  };
+  recog.onerror = ev => { if (ev.error === 'not-allowed'){ listening = false; $('#btnMic').classList.remove('on'); toast('Please allow microphone permission'); } };
+  recog.onend = () => { if (listening){ try{ recog.start(); }catch(e){} } else $('#btnMic').classList.remove('on'); };
+  finalText = ''; renderSR(); listening = true; recog.start(); $('#btnMic').classList.add('on');
+};
+if (!SR) $('#srWarn').classList.remove('hidden');
+
+/* ===================== LANGUAGE PACKS (add/verify a speech language) ===================== */
+function packTemplate(code, name, bcp){
+  const words = {};
+  VOCAB.forEach(v => { words[v.id] = ''; });
+  Object.keys(BUILTIN_DEFAULT).forEach(k => { words['builtin_' + k] = ''; });
+  QUICK.forEach(q => { words[q.id] = ''; });
+  return { v: 1, packs: { [code]: { name, bcp, words } } };
+}
+$('#btnPackNew').onclick = () => {
+  const code = (prompt(T('Language code (e.g. mr)')) || '').trim().toLowerCase(); if (!code) return;
+  const name = (prompt(T('Language name (e.g. Marathi)')) || code).trim();
+  const bcp = (prompt(T('Voice locale (e.g. mr-IN)')) || (code + '-IN')).trim();
+  download('signvaani-lang-' + code + '.json', packTemplate(code, name, bcp));
+  toast('Template downloaded — fill in the words and import it back.', 4000);
+};
+$('#btnPackExport').onclick = () => {
+  const code = db.settings.speech, info = langInfo(code), words = {};
+  VOCAB.forEach(v => { words[v.id] = textIn(v, code) || ''; });
+  Object.entries(db.builtin).forEach(([k, b]) => { words['builtin_' + k] = textIn(b, code) || ''; });
+  QUICK.forEach(q => { words[q.id] = textIn(q, code) || ''; });
+  download('signvaani-lang-' + code + '.json', { v: 1, packs: { [code]: { name: info.name, bcp: info.bcp, words } } });
+};
+$('#btnPackImport').onclick = () => $('#filePack').click();
+$('#filePack').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    const j = JSON.parse(await f.text());
+    if (!j || !j.packs) throw new Error('bad');
+    Object.assign(db.packs, j.packs); save();
+    fillLangSelects(); toast('Language pack imported');
+  }catch(err){ toast('Invalid language pack'); }
+  e.target.value = '';
+};
+
+/* ===================== SETTINGS + WIRING ===================== */
+function fillSpeechLangSelect(){
+  const sel = $('#sLang'); const cur = db.settings.speech;
+  sel.replaceChildren(...Object.entries(allLangs()).map(([k, info]) => h('option', { value: k }, tn(info.name))));
+  sel.value = cur;
+}
+function fillLangSelects(){ fillSpeechLangSelect(); fillLqCat(); fillLqLang(); fillSrLang(); fillVoiceSelect(); updateVoiceInfo(); }
+function applyUILang(){
+  applyStatic();
+  $$('#uiSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.ui === db.settings.ui));
+  updateSpeedBtn();
+  setStatus(running ? 'Live' : 'Camera is off', running ? 'live' : '');
+  renderAll(); fillLangSelects();
+  if (MISSING.size){ console.warn('Missing HI translations:', [...MISSING]); }
+}
+$$('#uiSeg button').forEach(b => b.onclick = () => { db.settings.ui = b.dataset.ui; save(); applyUILang(); });
+
+function bindSettings(){
+  const S = db.settings;
+  const sync = () => {
+    $('#vRate').textContent = (+S.rate).toFixed(2) + 'x'; $('#vPitch').textContent = (+S.pitch).toFixed(2); $('#vVol').textContent = Math.round(S.volume * 100) + '%';
+    $('#vHold').textContent = S.holdMs; $('#vThr').textContent = (+S.thr).toFixed(2); $('#vMThr').textContent = (+S.mthr).toFixed(2);
+  };
+  $('#sUI').value = S.ui;
+  $('#sMode').value = S.speakMode; $('#sRate').value = S.rate; $('#sPitch').value = S.pitch; $('#sVol').value = S.volume;
+  $('#sHold').value = S.holdMs; $('#sThr').value = S.thr; $('#sMThr').value = S.mthr; $('#sVib').checked = S.vibrate; $('#sSkel').checked = S.skeleton;
+  $('#dMirror').checked = S.mirror; sync(); fillLangSelects();
+  $('#sUI').onchange = e => { db.settings.ui = e.target.value; save(); applyUILang(); };
+  $('#sLang').onchange = e => { S.speech = e.target.value; save(); fillLangSelects(); renderSentence(); renderQuick(); };
+  $('#sVoice').onchange = e => { S.voices[langInfo(S.speech).voiceKey] = e.target.value; save(); };
+  $('#sRate').oninput = e => { S.rate = +e.target.value; save(); sync(); };
+  $('#sPitch').oninput = e => { S.pitch = +e.target.value; save(); sync(); };
+  $('#sVol').oninput = e => { S.volume = +e.target.value; save(); sync(); };
+  $('#sHold').oninput = e => { S.holdMs = +e.target.value; save(); sync(); };
+  $('#sThr').oninput = e => { S.thr = +e.target.value; save(); sync(); };
+  $('#sMThr').oninput = e => { S.mthr = +e.target.value; save(); sync(); };
+  $('#sVib').onchange = e => { S.vibrate = e.target.checked; save(); };
+  $('#sSkel').onchange = e => { S.skeleton = e.target.checked; save(); };
+  $('#btnTest').onclick = () => { unlockTTS(); speakRuns([{ t: SAMPLE[S.speech] || SAMPLE.hi, k: S.speech }], true); };
+  $('#btnReset').onclick = async () => { if (confirm('All signs and settings will be deleted. Export a backup first. Continue?')){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    db = defaults(); await flushSave(); repCache.clear(); sentence = []; spoken = 0; bindSettings(); renderAll(); toast('Reset complete'); } };
+}
+function renderAll(){ renderSentence(); renderHistory(); renderQuick(); renderGestures(); renderBuiltin(); renderVocab(); }
+
+function setTab(name){
+  tab = name;
+  $$('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === name));
+  $$('.pane').forEach(p => p.classList.toggle('hidden', p.id !== 'pane-' + name));
+  hold = { key: null, since: 0, fired: false };
+  if (name === 'seekho') startDemo(); else { stopDemo(); clearTimeout(seq.timer); if (prac.on) pracStop(); }
+}
+$$('.tab').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+$$('#modeSeg button').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  $$('#modeSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('#motionBox').classList.toggle('hidden', mode !== 'motion'); $('#staticHint').classList.toggle('hidden', mode !== 'static');
+  hold = { key: null, since: 0, fired: false };
+});
+$('#btnSpeak').onclick = () => { unlockTTS(); speakSentence(); };
+$('#btnUndo').onclick = () => { sentence.pop(); spoken = Math.min(spoken, sentence.length); renderSentence(); };
+$('#btnClear').onclick = () => { sentence = []; spoken = 0; clearTimeout(phraseT); renderSentence(); if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+$('#btnCopy').onclick = async () => { try{ await navigator.clipboard.writeText(sentenceText()); toast('Copied'); }catch(e){ toast('Could not copy'); } };
+$('#btnTypeSpeak').onclick = () => { const t = $('#typeIn').value.trim(); if (!t) return; unlockTTS(); speakText(t); pushHistory(t); };
+$('#typeIn').onkeydown = e => { if (e.key === 'Enter') $('#btnTypeSpeak').click(); };
+$('#btnSavePhrase').onclick = () => {
+  const t = $('#typeIn').value.trim(); if (!t) return toast('Write some text first');
+  const k = detectLang(t), it = { id: uid(), en: '', hi: '', tr: {} };
+  if (k === 'hi') it.hi = t; else if (k === 'en') it.en = t; else it.tr[k] = t;
+  db.phrases.push(it); save(); renderQuick(); toast('Quick phrase saved');
+};
+
+applyUILang(); drawMsg('The sign will appear here');
+</script>
+</body>
+</html>
